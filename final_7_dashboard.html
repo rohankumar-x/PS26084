@@ -1,0 +1,2874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MEGH-RAKSHAK | MoES Convective Scale Nowcasting GIS Operations</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" onerror="this.onerror=null;this.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>window.L||document.write('<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>')</script>
+<style>
+  :root {
+    --bg-dark: #080c14;
+    --bg-panel: #0d131f;
+    --bg-card: #141c2c;
+    --bg-card-hover: #1c273c;
+    --bg-card-active: #202d44;
+    --border: #223249;
+    --border-light: #2d4260;
+    --text-primary: #f0f6fc;
+    --text-secondary: #94a3b8;
+    --text-muted: #8696ae;
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #10b981;
+    --accent-yellow: #f59e0b;
+    --accent-orange: #f97316;
+    --accent-red: #ef4444;
+    --accent-purple: #a855f7;
+    --accent-pink: #ec4899;
+    --storm-severe: #ef4444;
+    --storm-warning: #f59e0b;
+    --storm-watch: #06b6d4;
+    --font: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    user-select: none;
+  }
+
+  /* ===== TOP HEADER ===== */
+  #header {
+    height: 48px;
+    background: #090e18;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 1000;
+  }
+
+  .brand-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .emblem-badge {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: #0b0f1a;
+    font-weight: 900;
+    font-size: 11px;
+    padding: 4px 7px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .title-group h1 {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .title-group h1 span { color: var(--accent-yellow); }
+  .title-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .header-sep {
+    width: 1px;
+    height: 26px;
+    background: var(--border);
+  }
+
+  /* Feeds stream */
+  .telemetry-stream {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .feed-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(20, 28, 44, 0.6);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .status-pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .pulse-green { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
+  .pulse-cyan  { background: var(--accent-cyan);  box-shadow: 0 0 6px var(--accent-cyan); }
+  .pulse-yellow{ background: var(--accent-yellow);box-shadow: 0 0 6px var(--accent-yellow); animation: flash 1.2s infinite; }
+  .pulse-red   { background: var(--accent-red);   box-shadow: 0 0 6px var(--accent-red); animation: flash 0.8s infinite; }
+  @keyframes flash { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--accent-red);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .clock-box {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .clock-main {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .clock-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .icon-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 5px 9px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .icon-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    background: var(--bg-card-hover);
+  }
+
+  /* ===== MAIN 3-PANE CONTAINER ===== */
+  #main-container {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 264px 1fr 372px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ===== LEFT PANEL (CONTROLS & LAYERS) ===== */
+  #left-panel {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 12px;
+    gap: 12px;
+  }
+  #left-panel::-webkit-scrollbar { width: 4px; }
+  #left-panel::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+  .section-heading {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Role Switcher */
+  .role-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .role-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .role-btn:hover {
+    border-color: var(--border-light);
+    color: var(--text-primary);
+  }
+  .role-btn.active {
+    background: var(--accent-yellow);
+    border-color: var(--accent-yellow);
+    color: #0b0f1a;
+    font-weight: 700;
+  }
+  .role-btn .role-icon { font-size: 13px; }
+
+  /* Layer Control */
+  .layers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border-radius: 4px;
+    background: rgba(20, 28, 44, 0.4);
+    border: 1px solid rgba(34, 50, 73, 0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .layer-row:hover {
+    background: rgba(20, 28, 44, 0.9);
+    border-color: var(--border-light);
+  }
+  .layer-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .layer-checkbox {
+    width: 13px;
+    height: 13px;
+    border-radius: 2px;
+    border: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    background: #090e18;
+    color: transparent;
+  }
+  .layer-checkbox.checked {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+  }
+  .layer-badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+  .layer-name {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .layer-row.active .layer-name { color: var(--text-primary); font-weight: 500; }
+  .layer-val {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* AI Pipeline Telemetry */
+  .ai-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px;
+  }
+  .ai-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .ai-model-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-cyan);
+  }
+  .ai-badge {
+    font-size: 10px;
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .ai-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 10px;
+    margin-top: 6px;
+  }
+  .ai-stat-box {
+    background: rgba(9, 14, 24, 0.6);
+    border: 1px solid var(--border);
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+  .ai-stat-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; }
+  .ai-stat-value { font-weight: 700; color: var(--text-primary); margin-top: 1px; }
+
+  /* Broadcast Alert Channels */
+  .broadcast-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .channel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }
+  .channel-pill {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .channel-pill.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .lang-toggle-btn {
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid var(--accent-yellow);
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--accent-yellow);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .lang-toggle-btn.hindi-active {
+    background: var(--accent-yellow);
+    color: #0b0f1a;
+  }
+
+  /* ===== CENTER MAP & TIMELINE ===== */
+  #map-pane {
+    position: relative;
+    background: #090e18;
+    overflow: hidden;
+  }
+  #map {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Map Floating Header */
+  .map-floating-status {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 800;
+  }
+  .status-cluster {
+    background: rgba(9, 14, 24, 0.88);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+  }
+  .status-cluster strong { color: var(--text-primary); }
+
+  /* Map Tools Widget */
+  .map-tools {
+    display: flex;
+    gap: 4px;
+    pointer-events: auto;
+  }
+  .map-btn {
+    background: rgba(9, 14, 24, 0.88);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .map-btn:hover { background: var(--bg-card-hover); border-color: var(--accent-blue); }
+  .map-btn.on { border-color: var(--accent-cyan); color: var(--accent-cyan); box-shadow: 0 0 8px rgba(6,182,212,.35); }
+
+  /* Map Legend */
+  #map-legend {
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background: rgba(9, 14, 24, 0.9);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    padding: 8px 10px;
+    z-index: 800;
+    font-size: 10px;
+    width: 140px;
+  }
+  .legend-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 5px;
+  }
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    color: var(--text-secondary);
+  }
+  .legend-color {
+    width: 14px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  /* Interactive Lead Time Timeline */
+  #timeline-container {
+    position: absolute;
+    bottom: 44px;
+    left: 10px;
+    right: 10px;
+    background: rgba(9, 14, 24, 0.92);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 9px 14px;
+    z-index: 800;
+  }
+  .timeline-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .timeline-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .timeline-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .playback-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .play-btn {
+    background: var(--accent-blue);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .play-btn:hover { background: #2563eb; }
+  .time-badge {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timeline-track-wrapper {
+    position: relative;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+  .timeline-track {
+    width: 100%;
+    height: 7px;
+    border-radius: 4px;
+    background: #141c2c;
+    position: relative;
+    overflow: hidden;
+  }
+  .track-zone-confident {
+    position: absolute;
+    left: 0;
+    width: 33.33%;
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #f59e0b);
+  }
+  .track-zone-probabilistic {
+    position: absolute;
+    left: 33.33%;
+    width: 66.67%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(245, 158, 11, 0.5) 0px,
+      rgba(245, 158, 11, 0.5) 5px,
+      rgba(20, 28, 44, 0.5) 5px,
+      rgba(20, 28, 44, 0.5) 10px
+    );
+  }
+  #timeline-cursor {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 3px solid var(--accent-blue);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+    pointer-events: none;
+    transition: left 0.05s linear;
+  }
+  .timeline-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Accuracy & Telemetry Bottom Bar */
+  #bottom-accuracy-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 38px;
+    background: #080c14;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 18px;
+    z-index: 800;
+    font-size: 11px;
+  }
+  .metric-item {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .metric-val {
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-lbl {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+  .metric-target {
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .bar-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border);
+  }
+  .feeds-summary {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .tag-healthy {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ===== RIGHT PANEL (ALERTS & STORM INTELLIGENCE) ===== */
+  #right-panel {
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .cell-badge {
+    background: var(--accent-red);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+
+  /* Alert cards list (sticky top) */
+  .alerts-card-list {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .storm-summary-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(34, 50, 73, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+  }
+  .storm-summary-card:hover { background: var(--bg-card); }
+  .storm-summary-card.active-red {
+    background: rgba(239, 68, 68, 0.08);
+    border-left-color: var(--accent-red);
+  }
+  .storm-summary-card.active-amber {
+    background: rgba(245, 158, 11, 0.08);
+    border-left-color: var(--accent-yellow);
+  }
+  .storm-summary-card.active-cyan {
+    background: rgba(6, 182, 212, 0.08);
+    border-left-color: var(--accent-cyan);
+  }
+
+  .card-left .storm-id {
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .card-left .storm-type {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .card-right {
+    text-align: right;
+  }
+  .card-countdown {
+    font-size: 14px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-impact {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* Scrollable storm detail content */
+  #right-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #right-scrollable::-webkit-scrollbar { width: 4px; }
+  #right-scrollable::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+  /* Hero Countdown Card */
+  .hero-storm-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    position: relative;
+  }
+  .hero-storm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .hero-title {
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .hero-subtitle {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .hero-sev-badge {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+  .badge-red { background: var(--accent-red); color: white; }
+  .badge-amber { background: var(--accent-yellow); color: #0b0f1a; }
+  .badge-cyan { background: var(--accent-cyan); color: #0b0f1a; }
+
+  .hero-countdown-wrap {
+    margin: 8px 0;
+  }
+  .hero-countdown-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .hero-countdown-number {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+
+  /* Severe Storm Parameters Meters */
+  .hazard-metrics-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .hm-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .hm-row {
+    margin-bottom: 8px;
+  }
+  .hm-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+  .hm-name { font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .hm-desc { font-size: 10px; color: var(--text-muted); }
+  .hm-pct { font-weight: 800; }
+  .hm-track {
+    height: 6px;
+    background: #090e18;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .hm-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  /* Dual-Pol & Scientific Metrics */
+  .science-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+  }
+  .science-tag {
+    font-size: 10px;
+    background: rgba(9, 14, 24, 0.8);
+    border: 1px solid var(--border-light);
+    color: var(--accent-cyan);
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+
+  /* Impact in Path Grid */
+  .impact-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .impact-tile {
+    background: rgba(9, 14, 24, 0.6);
+    border: 1px solid var(--border);
+    padding: 7px;
+    border-radius: 4px;
+  }
+  .impact-icon { font-size: 13px; }
+  .impact-val { font-size: 12px; font-weight: 800; color: var(--text-primary); margin-top: 2px; }
+  .impact-desc { font-size: 10px; color: var(--text-muted); }
+
+  /* First Impact ETAs */
+  .etas-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+  }
+  .eta-chips-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .eta-chip {
+    flex: 1;
+    background: rgba(9, 14, 24, 0.8);
+    border: 1px solid var(--border);
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .eta-loc { font-size: 10px; color: var(--text-muted); }
+  .eta-val { font-size: 13px; font-weight: 800; color: var(--accent-yellow); margin-top: 2px; }
+
+  /* Advisory & Dispatch Box */
+  .advisory-box {
+    background: rgba(20, 28, 44, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .adv-content {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .adv-hindi {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #fbbf24;
+    border-top: 1px dashed var(--border);
+    padding-top: 6px;
+    margin-top: 2px;
+  }
+  .adv-telemetry {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .dispatch-action-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    color: white;
+    background: var(--accent-red);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .dispatch-action-btn:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+  }
+
+  /* ===== MODAL & TOAST ===== */
+  #dispatch-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+  }
+  #dispatch-modal.active { display: flex; }
+  .modal-box {
+    width: 480px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.8);
+  }
+  .modal-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent-red);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cap-preview {
+    background: #090e18;
+    border: 1px solid var(--border);
+    padding: 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 10px;
+    color: #38bdf8;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  #toast {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(16, 185, 129, 0.95);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 3000;
+    display: none;
+  }
+  #toast.show { display: block; animation: fadeInDown 0.3s ease; }
+  @keyframes fadeInDown { from{opacity:0; transform:translate(-50%,-10px);} to{opacity:1; transform:translate(-50%,0);} }
+
+  .admin-card,.mini-card{background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:9px}
+  .mini-card{margin:10px 0}.mini-lbl{font-size:10px;color:var(--text-muted);margin:8px 0 4px}
+  .log-row{font-size:10px;color:var(--text-secondary);padding:3px 0;border-bottom:1px solid var(--border)}
+  .fus-row{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-secondary);margin:3px 0}
+  .fus-row span:first-child{width:50px}.fus-row span:last-child{width:28px;text-align:right}
+  .fus-track{flex:1;height:5px;background:#090e18;border-radius:3px;overflow:hidden}.fus-track div{height:100%}
+
+  /* ===== LAYOUT FIXES: spacing / wrapping only ===== */
+  .brand-group,.header-right,.header-actions,.live-indicator,.clock-box,.feed-pill,.icon-btn,.emblem-badge,.title-sub,.map-btn,.metric-item,.feeds-summary,.tag-healthy,.bar-sep{white-space:nowrap;flex-shrink:0}
+  .metric-lbl,.metric-target{line-height:1.15}
+  .map-floating-status{flex-wrap:wrap;gap:6px;align-items:flex-start}
+  .status-cluster{flex-wrap:wrap;gap:2px 10px;max-width:100%}
+  .map-tools{margin-left:auto;flex-shrink:0}
+  .leaflet-bottom.leaflet-right{bottom:134px}
+  #bottom-accuracy-bar{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  @media (max-width:1760px){
+    #header{gap:10px;padding:0 10px}
+    .telemetry-stream{gap:6px;font-size:10px}
+    .feed-pill{padding:3px 6px;gap:4px}
+    .header-right{gap:8px}
+    .icon-btn{padding:4px 7px;font-size:10px}
+    #bottom-accuracy-bar{gap:8px;padding:0 8px}
+    .metric-target{font-size:10px}
+    .metric-val{font-size:13px}
+    .feeds-summary{font-size:10px;gap:4px}
+    .tag-healthy{padding:1px 4px;font-size:10px}
+  }
+  @media (max-width:1560px){
+    #header{height:auto;min-height:48px;flex-wrap:wrap;row-gap:4px;padding:4px 10px}
+    .telemetry-stream{flex-wrap:wrap}
+  }
+  @media (max-width:1420px){
+    #map-legend{top:84px}
+  }
+  @media (max-width:1200px){
+    #main-container{grid-template-columns:236px 1fr 336px}
+  }
+
+  /* Map base: visible dark grid if tiles can't load */
+  #map,#map.leaflet-container{width:100%;height:100%;min-height:300px;background-color:#0b1220;background-image:linear-gradient(rgba(59,130,246,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(59,130,246,.08) 1px,transparent 1px);background-size:48px 48px}
+
+  /* ===== v2 FIXES: lightning flash, dark popups, a11y, probability bands ===== */
+  .ltg-flash{animation:ltgflash 1.6s infinite}
+  @keyframes ltgflash{0%,100%{opacity:.25;transform:scale(.9)}8%{opacity:1;transform:scale(1.25)}16%{opacity:.4}24%{opacity:1}40%{opacity:.25}}
+  .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0d131f;color:#e2e8f0;border:1px solid #2d4260;box-shadow:0 6px 20px rgba(0,0,0,.6)}
+  .leaflet-popup-content{margin:10px 12px;font-size:11px;line-height:1.5;color:#e2e8f0}
+  .leaflet-container a.leaflet-popup-close-button{color:#94a3b8}
+  .timeline-track-wrapper{touch-action:none}
+  .timeline-track-wrapper:focus-visible,button:focus-visible,.layer-row:focus-visible,.channel-pill:focus-visible,.storm-summary-card:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+  .timeline-track-wrapper:focus-visible #timeline-cursor{box-shadow:0 0 0 4px rgba(59,130,246,.5)}
+  .hm-track{position:relative}
+  .hm-band{position:absolute;top:0;height:100%;display:none;background:rgba(255,255,255,.28);border-left:1px solid rgba(255,255,255,.65);border-right:1px solid rgba(255,255,255,.65)}
+  .hero-countdown-number.window{font-size:26px;letter-spacing:.5px}
+  @media (prefers-reduced-motion:reduce){.ltg-flash,.status-pulse{animation:none!important}}
+
+  /* ===== v3: radar overlays, tooltips, legend ===== */
+  .leaflet-tooltip.mr-tip{background:#0d131f;color:#e2e8f0;border:1px solid #2d4260;font-size:10px;font-weight:700;padding:2px 6px;box-shadow:none}
+  .leaflet-tooltip-top.mr-tip:before{border-top-color:#2d4260}
+  .cb-pulse{animation:cbp 2.2s ease-in-out infinite}
+  @keyframes cbp{0%,100%{fill-opacity:.35}50%{fill-opacity:.72}}
+  .gust-front{animation:gf 1.2s linear infinite}
+  @keyframes gf{to{stroke-dashoffset:-22}}
+  @media (prefers-reduced-motion:reduce){.cb-pulse,.gust-front{animation:none!important}}
+  #map-legend{width:176px}
+  #map-legend .legend-row{align-items:flex-start}
+  #map-legend .legend-color{flex-shrink:0;margin-top:2px}
+
+  /* ===== v4: map detail ===== */
+  .leaflet-bottom.leaflet-left{bottom:134px}
+  .leaflet-control-scale-line{background:rgba(9,14,24,.85);color:#cbd5e1;border-color:#64748b;font-size:10px}
+  #coord-readout{position:absolute;left:10px;top:58px;z-index:800;background:rgba(9,14,24,.85);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:10px;color:var(--text-secondary);font-variant-numeric:tabular-nums;pointer-events:none}
+
+  /* ===== v7: type floor, docked dispatch, collapsible cards, impact corridor ===== */
+  .hm-desc,.impact-desc,.eta-loc,.card-impact,.adv-telemetry,.legend-row,.mini-lbl,.log-row,.fus-row,.impact-note{font-size:11px}
+  .fus-row span:first-child{width:62px}
+  .layer-meta{min-width:0}
+  .layer-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .layer-val{white-space:nowrap;flex-shrink:0;margin-left:6px}
+
+  #dispatch-dock{flex-shrink:0;padding:10px 12px 8px;background:#0a101b;border-top:1px solid var(--border-light);box-shadow:0 -8px 18px rgba(0,0,0,.45)}
+  #dispatch-dock .dispatch-action-btn{padding:12px}
+  .dock-note{font-size:10px;color:var(--text-muted);text-align:center;margin-top:6px;line-height:1.3}
+
+  .acc-head{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .acc-head::after{content:'';width:7px;height:7px;border-right:2px solid var(--text-muted);border-bottom:2px solid var(--text-muted);transform:rotate(45deg);margin:-3px 3px 0 0;transition:transform .15s;flex-shrink:0}
+  .collapsed > .acc-head::after{transform:rotate(-45deg);margin-top:0}
+  .acc-head:hover{color:var(--text-primary)}
+  .acc-head:focus-visible{outline:2px solid #3b82f6;outline-offset:2px;border-radius:3px}
+  .collapsed > .acc-body{display:none}
+  .collapsed > .acc-head{margin-bottom:0}
+  .advisory-box > .acc-body{display:flex;flex-direction:column;gap:6px}
+
+  .impact-note{color:var(--text-muted);margin:-2px 0 8px;line-height:1.35}
+  .impact-tile{cursor:pointer;transition:border-color .15s,background .15s}
+  .impact-tile:hover{border-color:var(--border-light);background:rgba(28,39,60,.7)}
+  .impact-tile.sel{border-color:var(--accent-pink);background:rgba(236,72,153,.12);box-shadow:0 0 0 1px var(--accent-pink) inset}
+  .impact-tile:focus-visible{outline:2px solid #3b82f6;outline-offset:2px}
+  .imp-ring{animation:impring 1.6s ease-in-out infinite}
+  .imp-ring.dim{animation:none;stroke-opacity:.35}
+  @keyframes impring{0%,100%{stroke-opacity:.95;stroke-width:2}50%{stroke-opacity:.35;stroke-width:4.5}}
+  .imp-tag{background:rgba(9,14,24,.92);border:1px solid;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap;transform:translate(8px,-10px);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+  @media (prefers-reduced-motion:reduce){.imp-ring{animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast" role="status" aria-live="polite">✅ EMERGENCY NOWCAST BROADCAST DISPATCHED VIA NDMA SACHET + SMS GATEWAYS</div>
+
+<!-- DISPATCH CONFIRMATION MODAL -->
+<div id="dispatch-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-el">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title-el">🚨 Confirm High-Priority Nowcast Alert Dispatch</div>
+    <div style="font-size:11px; color:var(--text-secondary); line-height:1.5;">
+      You are about to issue a CAP (Common Alerting Protocol) v1.2 emergency broadcast to district emergency operations centers, telecom towers, and civilian mobile apps.
+    </div>
+    <div id="appr-steps" style="font-size:10px;font-weight:700;color:var(--accent-yellow)"></div>
+    <div class="cap-preview" id="modal-cap-preview">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;alert xmlns="urn:oasis:names:tc:emergency:cap:1.2"&gt;
+  &lt;identifier&gt;MEGHRAKSHAK-2026-C14-ALERT&lt;/identifier&gt;
+  &lt;sender&gt;meghrakshak.demo@sdma.example&lt;/sender&gt;
+  &lt;status&gt;Exercise&lt;/status&gt;
+  &lt;msgType&gt;Alert&lt;/msgType&gt;
+  &lt;scope&gt;Public&lt;/scope&gt;
+  &lt;info&gt;
+    &lt;category&gt;Met&lt;/category&gt;
+    &lt;event&gt;Severe Thunderstorm &amp; Hail&lt;/event&gt;
+    &lt;urgency&gt;Immediate&lt;/urgency&gt;
+    &lt;severity&gt;Extreme&lt;/severity&gt;
+    &lt;certainty&gt;Likely&lt;/certainty&gt;
+    &lt;areaDesc&gt;Rampur-Khajuri Convective Corridor (1-3km grid)&lt;/areaDesc&gt;
+  &lt;/info&gt;
+&lt;/alert&gt;
+    </div>
+    <div style="font-size:10px; color:var(--text-muted);">
+      Channels selected: SMS (4,120 subs), WhatsApp API, NDMA SACHET, IMD CAP Gateway.
+    </div>
+    <div class="modal-actions">
+      <button class="icon-btn" onclick="closeModal()">Cancel</button>
+      <button class="dispatch-action-btn" style="width:auto; padding:6px 14px;" id="modal-confirm-btn" onclick="confirmBroadcast()">Submit for Approval</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP HEADER -->
+<header id="header">
+  <div class="brand-group">
+    <div class="emblem-badge">MoES · NCMRWF</div>
+    <div class="title-group">
+      <h1>MEGH<span>RAKSHAK</span></h1>
+      <div class="title-sub">Hyper-Local Convective Nowcasting System (0–6 hr · 1–3 km)</div>
+    </div>
+  </div>
+
+  <div class="header-sep"></div>
+
+  <!-- Data Streams Telemetry -->
+  <div class="telemetry-stream">
+    <div class="feed-pill"><div class="status-pulse pulse-green"></div> DWR Radar: <strong id="pill-dwr" style="color:var(--text-primary)">3/3 Live (5 min)</strong></div>
+    <div class="feed-pill"><div class="status-pulse pulse-cyan"></div> INSAT-3D/3DR: <strong style="color:var(--text-primary)">IR/WV Rapid-Scan</strong></div>
+    <div class="feed-pill"><div class="status-pulse pulse-yellow"></div> Damini Lightning: <strong style="color:var(--text-primary)">Real-Time (10s)</strong></div>
+    <div class="feed-pill"><div class="status-pulse pulse-green"></div> ERA5/NWP: <strong style="color:var(--text-primary)">Ensemble Fed</strong></div>
+  </div>
+
+  <div class="header-right">
+    <div class="live-indicator"><div class="status-pulse pulse-red"></div> DEMO · SIMULATED DATA</div>
+    <div class="clock-box">
+      <div class="clock-main" id="wall-clock">14:35:12 IST</div>
+      <div class="clock-sub">09:05:12 UTC · Cycle 14:30</div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+      <button class="icon-btn" onclick="resetMapView()">⊙ Center Radar</button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div id="main-container">
+
+  <!-- LEFT PANEL: CONTROLS & LAYERS -->
+  <aside id="left-panel">
+    <div class="admin-card">
+      <div class="section-heading">Administration Console</div>
+      <div style="font-weight:700;font-size:12px">District Disaster Management Authority</div>
+      <div style="font-size:10px;color:var(--text-secondary);margin-top:3px">Duty Officer view &middot; warnings need DM/SDMA authorization before dispatch</div>
+    </div>
+
+    <!-- GIS Meteorological Layers -->
+    <div>
+      <div class="section-heading">
+        <span>Meteorological Layers</span>
+        <span style="color:var(--accent-cyan); font-size:10px; cursor:pointer;" onclick="toggleAllLayers()">Toggle All</span>
+      </div>
+      <div class="layers-list">
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(0,this)}" onclick="toggleMapLayer(0, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#ef4444"></div>
+            <span class="layer-name">Radar Reflectivity (Z)</span>
+          </div>
+          <span class="layer-val">dBZ Composite</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(1,this)}" onclick="toggleMapLayer(1, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#10b981"></div>
+            <span class="layer-name">Doppler Velocity (Vr)</span>
+          </div>
+          <span class="layer-val">Couplet Dipole</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(2,this)}" onclick="toggleMapLayer(2, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#06b6d4"></div>
+            <span class="layer-name">INSAT Cloud Cooling</span>
+          </div>
+          <span class="layer-val">Tir - Twv</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(3,this)}" onclick="toggleMapLayer(3, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#f59e0b"></div>
+            <span class="layer-name">Lightning Density</span>
+          </div>
+          <span class="layer-val">Damini Strokes</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(4,this)}" onclick="toggleMapLayer(4, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#bae6fd"></div>
+            <span class="layer-name">Hail Probability</span>
+          </div>
+          <span class="layer-val">MESH / Zdr</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(5,this)}" onclick="toggleMapLayer(5, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#a855f7"></div>
+            <span class="layer-name">Cloudburst Risk</span>
+          </div>
+          <span class="layer-val">&ge;100 mm/hr</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(6,this)}" onclick="toggleMapLayer(6, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#3b82f6"></div>
+            <span class="layer-name">DWR Range Rings</span>
+          </div>
+          <span class="layer-val">50–250 km</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(7,this)}" onclick="toggleMapLayer(7, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#e2e8f0"></div>
+            <span class="layer-name">1–3 km Grid Mesh</span>
+          </div>
+          <span class="layer-val">High-Res</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(8,this)}" onclick="toggleMapLayer(8, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#f43f5e"></div>
+            <span class="layer-name">Critical Infrastructure</span>
+          </div>
+          <span class="layer-val">Hospitals/Roads</span>
+        </div>
+
+        <div class="layer-row active" role="checkbox" aria-checked="true" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();toggleMapLayer(9,this)}" onclick="toggleMapLayer(9, this)">
+          <div class="layer-meta">
+            <div class="layer-checkbox checked">✓</div>
+            <div class="layer-badge-dot" style="background:#ec4899"></div>
+            <span class="layer-name">Impact Corridor</span>
+          </div>
+          <span class="layer-val">Path &amp; exposure</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Model Telemetry -->
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <span class="ai-model-tag">Fusion AI Engine</span>
+        <span class="ai-badge">U-Net + ConvLSTM</span>
+      </div>
+      <div style="font-size:10px; color:var(--text-secondary); line-height:1.4;">
+        Multi-source tensor cube (Z, Vr, Tir, Strokes, CAPE) trained with weighted Focal Loss on MOSDAC &amp; IMD archives.
+      </div>
+      <div class="ai-stats-grid">
+        <div class="ai-stat-box">
+          <div class="ai-stat-label">Inference Latency · Target</div>
+          <div class="ai-stat-value" style="color:var(--accent-cyan)">&lt; 5 s (GPU)</div>
+        </div>
+        <div class="ai-stat-box">
+          <div class="ai-stat-label">Spatial Res. · Design</div>
+          <div class="ai-stat-value" style="color:var(--accent-cyan)">1–3 km Grid</div>
+        </div>
+        <div class="ai-stat-box">
+          <div class="ai-stat-label">FSS @ 3km · Target</div>
+          <div class="ai-stat-value" style="color:var(--accent-yellow)">&gt; 0.50</div>
+        </div>
+        <div class="ai-stat-box">
+          <div class="ai-stat-label">Brier Score</div>
+          <div class="ai-stat-value" style="color:var(--text-muted)">Pending backtest</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.4">Targets from the SIH proposal. Not measured results; validation vs pySTEPS is planned for the pilot.</div>
+    </div>
+
+    <!-- Broadcast Gateway -->
+    <div class="broadcast-section">
+      <div class="section-heading">Multi-Channel Gateways</div>
+      <div class="channel-grid">
+        <div class="channel-pill active" onclick="this.classList.toggle('active')">SMS Broadcast</div>
+        <div class="channel-pill active" onclick="this.classList.toggle('active')">WhatsApp Bot</div>
+        <div class="channel-pill active" onclick="this.classList.toggle('active')">NDMA SACHET</div>
+        <div class="channel-pill active" onclick="this.classList.toggle('active')">Cell Broadcast</div>
+      </div>
+      <button class="lang-toggle-btn" id="lang-btn" onclick="toggleLanguage()">
+        🌐 Language: <span id="lang-label">English + हिंदी Regional</span>
+      </button>
+    </div>
+
+    <!-- Attribution -->
+    <div style="font-size:10px; color:var(--text-muted); line-height:1.4; border-top:1px solid var(--border); padding-top:6px;">
+      Aligned with <strong>Mission Mausam</strong> · MoES / NCMRWF<br>
+      Team CodeKnight (ID: 121432) · Problem 26084
+    </div>
+  </aside>
+
+  <!-- CENTER MAP PANE -->
+  <main id="map-pane">
+    <!-- Map Floating Status Bar -->
+    <div class="map-floating-status">
+      <div class="status-cluster">
+        <span>Pilot Region: <strong>North India Convective Corridor</strong></span>
+        <span>•</span>
+        <span>Radar Volume: <strong>14:30 IST</strong></span>
+        <span>•</span>
+        <span style="color:var(--accent-cyan)">Active Cells: <strong>3 Detected</strong></span>
+      </div>
+      <div class="map-tools">
+        <button class="map-btn" onclick="panToStorm('C14')">Focus C-14</button>
+        <button class="map-btn" onclick="panToStorm('C09')">Focus C-09</button>
+        <button class="map-btn" onclick="panToStorm('C21')">Focus C-21</button>
+        <button class="map-btn on" id="follow-btn" onclick="toggleFollow()" aria-pressed="true" title="Keep the map centred on the selected storm as the lead-time scrubber moves. Dragging the map pauses this.">◎ Following C-14</button>
+      </div>
+    </div>
+
+    <!-- Leaflet Map Container -->
+    <div id="map"></div>
+
+    <!-- Map Legend -->
+    <div id="map-legend">
+      <div class="legend-title">Reflectivity (dBZ)</div>
+      <div class="legend-row"><div class="legend-color" style="background:#10b981"></div><span>20&ndash;30 Light</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:#f59e0b"></div><span>30&ndash;45 Moderate</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:#ef4444"></div><span>45&ndash;55 Heavy</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:#7c3aed"></div><span>&ge;55 Intense (hail / extreme rain)</span></div>
+      <div class="legend-title" style="margin-top:6px;">Hazard overlays</div>
+      <div class="legend-row"><div class="legend-color" style="background:rgba(186,230,253,.35);border:1px dashed #bae6fd"></div><span>Hail swath</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:#a855f7;border:1px solid #d8b4fe"></div><span>Cloudburst &ge;100 mm/hr core</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(245,158,11,.85))"></div><span>Lightning density</span></div>
+      <div class="legend-row"><div class="legend-color" style="height:0;border-top:2px dashed #22d3ee;margin-top:5px"></div><span>Gust front (downburst)</span></div>
+      <div class="legend-title" style="margin-top:6px;">Velocity Couplet</div>
+      <div class="legend-row"><div class="legend-color" style="background:#06b6d4"></div><span>Inbound (&minus;Vr)</span></div>
+      <div class="legend-row"><div class="legend-color" style="background:#f97316"></div><span>Outbound (+Vr)</span></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:6px">Basemap: procedural demo terrain</div>
+    </div>
+
+    <!-- 0-6 Hour Interactive Lead-Time Bar -->
+    <div id="timeline-container">
+      <div class="timeline-top">
+        <div class="timeline-title-group">
+          <span class="timeline-label">LEAD-TIME NOWCAST SCRUBBER</span>
+          <span class="time-badge" id="time-badge-text">T + 0.0 hr (Analysis)</span>
+        </div>
+        <div class="playback-controls">
+          <button class="play-btn" id="play-btn" aria-label="Play or pause forecast animation" onclick="togglePlay()">▶</button>
+          <button class="icon-btn" onclick="stepLeadTime(-0.5)" style="padding:2px 7px;">-30m</button>
+          <button class="icon-btn" onclick="stepLeadTime(0.5)" style="padding:2px 7px;">+30m</button>
+          <button class="icon-btn" onclick="resetLeadTime()" style="padding:2px 7px;">Now</button>
+        </div>
+      </div>
+
+      <div class="timeline-track-wrapper" id="timeline-track-wrapper" tabindex="0" role="slider" aria-label="Forecast lead time" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-valuetext="Now" onpointerdown="startTimelineDrag(event)" onpointermove="moveTimelineDrag(event)" onpointerup="stopTimelineDrag(event)" onpointercancel="stopTimelineDrag(event)" onkeydown="timelineKey(event)">
+        <div class="timeline-track" id="timeline-track">
+          <div class="track-zone-confident"></div>
+          <div class="track-zone-probabilistic"></div>
+        </div>
+        <div id="timeline-cursor" style="left:0%;"></div>
+      </div>
+
+      <div class="timeline-ticks">
+        <span>T+0h (Now)</span>
+        <span>+1h (Confident)</span>
+        <span>+2h (Skill Limit)</span>
+        <span>+3h (Probabilistic)</span>
+        <span>+4h</span>
+        <span>+5h</span>
+        <span>+6h (Outlook)</span>
+      </div>
+    </div>
+
+    <!-- Bottom Telemetry Bar -->
+    <footer id="bottom-accuracy-bar">
+      <div class="metric-item" title="Target from the proposal. Not a measured result.">
+        <span class="metric-val" style="color:var(--accent-yellow)">&gt;0.70 | &gt;0.50</span>
+        <div><div class="metric-lbl">POD 0–2h | 2–6h · TARGET</div><div class="metric-target">backtest pending</div></div>
+      </div>
+      <div class="bar-sep"></div>
+      <div class="metric-item" title="Target from the proposal. Not a measured result.">
+        <span class="metric-val" style="color:var(--accent-yellow)">&lt;0.30 | &lt;0.50</span>
+        <div><div class="metric-lbl">FAR 0–2h | 2–6h · TARGET</div><div class="metric-target">backtest pending</div></div>
+      </div>
+      <div class="bar-sep"></div>
+      <div class="metric-item" title="Goal: beat the pySTEPS optical-flow baseline. Not yet measured.">
+        <span class="metric-val" style="color:var(--accent-yellow)">&gt; pySTEPS</span>
+        <div><div class="metric-lbl">CSI · TARGET</div><div class="metric-target">baseline comparison planned</div></div>
+      </div>
+      <div class="bar-sep"></div>
+      <div class="metric-item" title="Measured during the pilot. No value claimed yet.">
+        <span class="metric-val" style="color:var(--text-muted)">TBD</span>
+        <div><div class="metric-lbl">Median Lead</div><div class="metric-target">measured in pilot</div></div>
+      </div>
+      <div class="bar-sep"></div>
+      <div class="metric-item">
+        <span class="metric-val" style="color:var(--accent-cyan)" id="latency-text">&lt; 5 min</span>
+        <div><div class="metric-lbl">Alert Latency · TARGET</div><div class="metric-target">data-to-alert SLA</div></div>
+      </div>
+
+      <div class="feeds-summary">
+        <span style="color:var(--accent-yellow);font-weight:700">TARGETS · NOT MEASURED RESULTS</span><span>Pipeline (demo status):</span>
+        <span class="tag-healthy">Kafka Ingest OK</span>
+        <span class="tag-healthy">Py-ART QC OK</span>
+        <span class="tag-healthy">CUDA Fast Infer</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- RIGHT PANEL: ALERTS & STORM PARAMETERS -->
+  <aside id="right-panel">
+    <div class="panel-header">
+      <span class="panel-title">Active Convective Alerts</span>
+      <span class="cell-badge">3 TRACKED</span>
+    </div>
+
+    <!-- Alert Cards List (Synced Live) -->
+    <div class="alerts-card-list">
+      <!-- C-14 -->
+      <div class="storm-summary-card active-red" id="card-C14" onclick="selectStorm('C14')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectStorm('C14')}">
+        <div class="card-left">
+          <div class="storm-id" style="color:var(--accent-red)">C-14</div>
+          <div class="storm-type">Severe Thunderstorm &amp; Hail</div>
+        </div>
+        <div class="card-right">
+          <div class="card-countdown" style="color:var(--accent-red)" id="sidebar-countdown-C14">00:42:18</div>
+          <div class="card-impact">ETA: Rampur</div>
+        </div>
+      </div>
+
+      <!-- C-09 -->
+      <div class="storm-summary-card" id="card-C09" onclick="selectStorm('C09')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectStorm('C09')}">
+        <div class="card-left">
+          <div class="storm-id" style="color:var(--accent-yellow)">C-09</div>
+          <div class="storm-type">Cloudburst &ge;100 mm/hr</div>
+        </div>
+        <div class="card-right">
+          <div class="card-countdown" style="color:var(--accent-yellow)" id="sidebar-countdown-C09">01:08:40</div>
+          <div class="card-impact">ETA: Khajuri</div>
+        </div>
+      </div>
+
+      <!-- C-21 -->
+      <div class="storm-summary-card" id="card-C21" onclick="selectStorm('C21')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectStorm('C21')}">
+        <div class="card-left">
+          <div class="storm-id" style="color:var(--accent-cyan)">C-21</div>
+          <div class="storm-type">Convective Initiation (Early)</div>
+        </div>
+        <div class="card-right">
+          <div class="card-countdown" style="color:var(--accent-cyan)" id="sidebar-countdown-C21">03:10:44</div>
+          <div class="card-impact">ETA: Sonpur</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Detailed Parameters -->
+    <div id="right-scrollable">
+
+      <!-- Hero Countdown Card (Color Synced) -->
+      <div class="hero-storm-card" id="hero-card">
+        <div class="hero-storm-header">
+          <div>
+            <div class="hero-title" id="hero-title">C-14 · Severe Thunderstorm</div>
+            <div class="hero-subtitle" id="hero-subtitle">Meso-cyclonic Hail &amp; Downburst Complex</div>
+          </div>
+          <span class="hero-sev-badge badge-red" id="hero-badge">RED ALERT</span>
+        </div>
+
+        <div class="hero-countdown-wrap">
+          <div class="hero-countdown-sub" id="hero-count-label">Time to first ground impact:</div>
+          <div class="hero-countdown-number" id="hero-main-countdown" style="color:var(--accent-red)">00:42:18</div>
+          <div id="hero-eta-win" style="font-size:10px;color:var(--text-secondary);text-align:center;margin-top:2px"></div>
+        </div>
+
+        <div class="hero-meta-row">
+          <span id="hero-movement">Vector: NE 38 km/h</span>
+          <span style="color:var(--accent-blue); font-weight:700;" id="hero-confidence">Confidence: 0.78 (High)</span>
+        </div>
+      </div>
+
+      <!-- Severe Storm Output Parameters -->
+      <div class="hazard-metrics-card">
+        <div class="hm-title">Automated Hazard Forecasting</div>
+        <div id="hz-note" style="font-size:10px;color:var(--text-muted);margin:-2px 0 8px"></div>
+
+        <!-- Lightning -->
+        <div class="hm-row">
+          <div class="hm-header">
+            <span class="hm-name">⚡ Lightning Density</span>
+            <span class="hm-pct" style="color:var(--accent-yellow)" id="hm-lightning-pct">82%</span>
+          </div>
+          <div class="hm-desc" id="hm-lightning-desc">9 strikes/km²/10 min · Damini verified</div>
+          <div class="hm-track">
+            <div class="hm-bar" id="hm-lightning-bar" style="width:82%; background:var(--accent-yellow)"></div>
+          </div>
+        </div>
+
+        <!-- Hail -->
+        <div class="hm-row">
+          <div class="hm-header">
+            <span class="hm-name">🌨 Hail Probability</span>
+            <span class="hm-pct" style="color:var(--accent-cyan)" id="hm-hail-pct">64%</span>
+          </div>
+          <div class="hm-desc" id="hm-hail-desc">Expected size: 2.5–3.5 cm (MESH/VIL)</div>
+          <div class="hm-track">
+            <div class="hm-bar" id="hm-hail-bar" style="width:64%; background:var(--accent-cyan)"></div>
+          </div>
+          <div class="science-tags" id="science-tags-hail">
+            <span class="science-tag">Dual-Pol Zdr: 0.12 dB</span>
+            <span class="science-tag">&rho;hv: 0.89 (Hydrometeor)</span>
+            <span class="science-tag">Echo Top: 14.8 km</span>
+          </div>
+        </div>
+
+        <!-- Downburst -->
+        <div class="hm-row">
+          <div class="hm-header">
+            <span class="hm-name">💨 Downburst Winds</span>
+            <span class="hm-pct" style="color:var(--accent-orange)" id="hm-downburst-pct">41%</span>
+          </div>
+          <div class="hm-desc" id="hm-downburst-desc">Peak surface gust: 24 m/s (86 km/h)</div>
+          <div class="hm-track">
+            <div class="hm-bar" id="hm-downburst-bar" style="width:41%; background:var(--accent-orange)"></div>
+          </div>
+        </div>
+
+        <!-- Cloudburst -->
+        <div class="hm-row">
+          <div class="hm-header">
+            <span class="hm-name">🌧 Cloudburst Threshold</span>
+            <span class="hm-pct" style="color:var(--accent-purple)" id="hm-cloudburst-pct">22%</span>
+          </div>
+          <div class="hm-desc" id="hm-cloudburst-desc">Peak rate: 62 mm/hr (Threshold: &ge;100 mm/hr)</div>
+          <div class="hm-track">
+            <div class="hm-bar" id="hm-cloudburst-bar" style="width:22%; background:var(--accent-purple)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ground Impact in Path -->
+      <div class="impact-card">
+        <div class="hm-title">Vulnerability &amp; Asset Exposure (projected path)</div>
+        <div class="impact-note">Computed from the corridor on the map. Tap a tile to see it highlighted. Populations are simulated.</div>
+        <div class="impact-grid">
+          <div class="impact-tile" data-cat="villages" role="button" tabindex="0" aria-pressed="false" onclick="focusImpact('villages')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();focusImpact('villages')}">
+            <div class="impact-icon">🏘</div>
+            <div class="impact-val" id="imp-villages">6 Villages</div>
+            <div class="impact-desc" id="imp-pop">~5,800 civilians exposed</div>
+          </div>
+          <div class="impact-tile" data-cat="hospital" role="button" tabindex="0" aria-pressed="false" onclick="focusImpact('hospital')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();focusImpact('hospital')}">
+            <div class="impact-icon">🏥</div>
+            <div class="impact-val" id="imp-hospital">1 Hospital</div>
+            <div class="impact-desc" id="imp-hosp-name">District Hospital Rampur</div>
+          </div>
+          <div class="impact-tile" data-cat="crops" role="button" tabindex="0" aria-pressed="false" onclick="focusImpact('crops')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();focusImpact('crops')}">
+            <div class="impact-icon">🌾</div>
+            <div class="impact-val" id="imp-crops">1,250 ha Crops</div>
+            <div class="impact-desc" id="imp-crop-desc">Standing wheat &amp; mustard</div>
+          </div>
+          <div class="impact-tile" data-cat="road" role="button" tabindex="0" aria-pressed="false" onclick="focusImpact('road')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();focusImpact('road')}">
+            <div class="impact-icon">🛣</div>
+            <div class="impact-val" id="imp-road">NH-24 Corridor</div>
+            <div class="impact-desc" id="imp-road-desc">8.4 km severe wind zone</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ETA Timetable -->
+      <div class="etas-card">
+        <div class="hm-title">Sector Arrival Sequence</div>
+        <div class="eta-chips-row">
+          <div class="eta-chip">
+            <div class="eta-loc" id="eta-name-1">Rampur</div>
+            <div class="eta-val" id="eta-val-1">00:42</div>
+          </div>
+          <div class="eta-chip">
+            <div class="eta-loc" id="eta-name-2">Dist. Hospital</div>
+            <div class="eta-val" id="eta-val-2">00:55</div>
+          </div>
+          <div class="eta-chip">
+            <div class="eta-loc" id="eta-name-3">Sonpur</div>
+            <div class="eta-val" id="eta-val-3">01:38</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mini-card"><div class="hm-title">Early Detection Log &amp; Data Fusion</div>
+        <div id="intel-log"></div><div class="mini-lbl">Fusion contribution (selected storm)</div><div id="fusion-bars"></div>
+        <button class="icon-btn" id="gap-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="toggleRadarGap()">Simulate radar outage</button></div>
+      <div class="mini-card"><div class="hm-title">Response Resources (simulated)</div><div id="res-list"></div></div>
+      <!-- Advisory Box with Bilingual Support -->
+      <div class="advisory-box">
+        <div class="hm-title">Public Protective Advisory</div>
+        <div class="adv-content" id="adv-text-en">
+          🚨 Take immediate shelter. Avoid tin roofs and open fields. Secure standing machinery and keep livestock indoors away from power lines.
+        </div>
+        <div class="adv-hindi" id="adv-text-hi">
+          🚨 तुरंत पक्के मकान में शरण लें। खुले खेतों में न जाएं, पशुओं को सुरक्षित स्थान पर बांधें। बिजली के खंभों से दूर रहें।
+        </div>
+        <div class="adv-telemetry" id="adv-telemetry">
+          Auto-disseminated via NDMA SACHET to 4,120 subscribers in Rampur Tehsil.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Docked dispatch action: always visible, whatever the panel scroll position -->
+    <div id="dispatch-dock">
+      <button class="dispatch-action-btn" id="dispatch-btn" onclick="openDispatchModal()">
+        <span>🚨</span>
+        <span id="dispatch-label">PREPARE WARNING · C-14</span>
+      </button>
+      <div class="dock-note">Exercise mode · needs DM / SDMA authorization before anything is sent</div>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+// ================================================================
+// SYSTEM DATA & STORM MODELS
+// ================================================================
+const STORMS = {
+  C14: {
+    id: 'C-14',
+    name: 'C-14 · Severe Thunderstorm',
+    subtitle: 'Meso-cyclonic Hail & Downburst Complex',
+    severity: 'RED ALERT',
+    badgeClass: 'badge-red',
+    color: '#ef4444',
+    lat: 28.72,
+    lng: 77.65,
+    vecLat: 0.045, // Movement per hour
+    vecLng: 0.060,
+    movement: 'Vector: NE 38 km/h',
+    confidence: 'Confidence: 0.78 (High)',
+    countdown: 42 * 60 + 18,
+    lightning: { pct: 82, desc: '9 strikes/km²/10 min · Damini verified' },
+    hail: { pct: 64, desc: 'Expected size: 2.5–3.5 cm (MESH/VIL)' },
+    downburst: { pct: 41, desc: 'Peak surface gust: 24 m/s (86 km/h)' },
+    cloudburst: { pct: 22, desc: 'Peak rate: 62 mm/hr (Threshold: ≥100 mm/hr)' },
+    impact: {
+      villages: '6 Villages',
+      pop: '~5,800 civilians exposed',
+      hospital: '1 Hospital',
+      hospName: 'District Hospital Rampur',
+      crops: '1,250 ha Crops',
+      cropDesc: 'Standing wheat & mustard'
+    },
+    etas: [
+      { name: 'Rampur', val: '00:42' },
+      { name: 'Dist. Hospital', val: '00:55' },
+      { name: 'Sonpur', val: '01:38' }
+    ],
+    advisoryEn: '🚨 Severe Hail & Wind Warning: Seek shelter immediately. Avoid tin roofs and open fields. Keep livestock indoors and secure farm implements.',
+    advisoryHi: '🚨 गंभीर ओलावृष्टि एवं तूफान चेतावनी: तुरंत पक्के मकान में शरण लें। खुले खेतों में न जाएं, पशुओं को सुरक्षित स्थान पर बांधें।',
+    advisoryTel: 'Targeted: 4,120 subscribers in Rampur tehsil (SMS/WhatsApp/SACHET)'
+  },
+  C09: {
+    id: 'C-09',
+    name: 'C-09 · Cloudburst Hazard Cell',
+    subtitle: 'Extreme Precipitation Rate ≥100 mm/hr',
+    severity: 'AMBER WARNING',
+    badgeClass: 'badge-amber',
+    color: '#f59e0b',
+    lat: 28.55,
+    lng: 77.58,
+    vecLat: 0.038,
+    vecLng: -0.015,
+    movement: 'Vector: NNW 28 km/h',
+    confidence: 'Confidence: 0.65 (Moderate)',
+    countdown: 68 * 60 + 40,
+    lightning: { pct: 55, desc: '5 strikes/km²/10 min' },
+    hail: { pct: 38, desc: 'Expected size: 1.0–1.8 cm' },
+    downburst: { pct: 29, desc: 'Peak surface gust: 18 m/s (65 km/h)' },
+    cloudburst: { pct: 78, desc: 'Peak rate: 108 mm/hr · THRESHOLD EXCEEDED' },
+    impact: {
+      villages: '4 Villages',
+      pop: '~3,200 civilians exposed',
+      hospital: '0 Hospitals',
+      hospName: 'Nearest: PHC Khajuri 4 km',
+      crops: '840 ha Crops',
+      cropDesc: 'Paddy fields & low-lying land'
+    },
+    etas: [
+      { name: 'Khajuri', val: '01:08' },
+      { name: 'Belapur', val: '01:25' },
+      { name: 'Dhanaur', val: '02:10' }
+    ],
+    advisoryEn: '⚠️ Flash Flood / Cloudburst Alert: Sudden inundation anticipated in drainage basins. Evacuate river crossings and low-lying nullahs immediately.',
+    advisoryHi: '⚠️ बादल फटने एवं अचानक बाढ़ की चेतावनी: नदी-नालों के जलस्तर में अप्रत्याशित वृद्धि संभव। निचले इलाकों से तुरंत ऊंचाई पर जाएं।',
+    advisoryTel: 'Targeted: 2,890 subscribers in Khajuri block (SACHET/IVRS)'
+  },
+  C21: {
+    id: 'C-21',
+    name: 'C-21 · Convective Initiation',
+    subtitle: 'Rapid Cloud-Top Cooling Detected by INSAT',
+    severity: 'WATCH ZONE',
+    badgeClass: 'badge-cyan',
+    color: '#06b6d4',
+    lat: 28.88,
+    lng: 77.42,
+    vecLat: 0.020,
+    vecLng: 0.035,
+    movement: 'Vector: ENE 18 km/h (Forming)',
+    confidence: 'Confidence: 0.52 (Initiation)',
+    countdown: 190 * 60 + 44,
+    lightning: { pct: 28, desc: '2 strikes/km²/10 min (Early charge)' },
+    hail: { pct: 18, desc: 'Uncertain · Developing updraft' },
+    downburst: { pct: 12, desc: 'Gust front forming' },
+    cloudburst: { pct: 10, desc: 'Peak rate: 35 mm/hr (Below threshold)' },
+    impact: {
+      villages: '2 Villages',
+      pop: '~1,100 civilians',
+      hospital: '0 Hospitals',
+      hospName: 'CHC Sonpur 14 km away',
+      crops: '350 ha Crops',
+      cropDesc: 'Standing vegetables & orchards'
+    },
+    etas: [
+      { name: 'Sonpur', val: '03:10' },
+      { name: 'Mahua', val: '03:45' },
+      { name: 'Kisanpur', val: '04:30' }
+    ],
+    advisoryEn: 'ℹ️ Convective Initiation Standby: Rapidly cooling cloud tops detected. Keep local disaster teams on alert. No civilian evacuation required yet.',
+    advisoryHi: 'ℹ️ प्रारंभिक तूफान निगरानी: नए गरज-चमक वाले बादलों का निर्माण। स्थानीय आपदा दल सतर्क रहें। नियमित मौसम अपडेट देखें।',
+    advisoryTel: 'Internal Watchlist: District Emergency Officers notified'
+  }
+};
+
+let activeStormKey = 'C14';
+let currentLeadTimeHr = 0.0;
+let isPlaying = false;
+let playInterval = null;
+let hindiVisible = true;
+let followStorm = true;      // map stays centred on the selected storm as lead time changes
+let flyingUntil = 0;         // ignore follow updates while a flyTo animation is running
+let lastFollowT = 0;
+
+// Countdown State
+const countdownState = {
+  C14: STORMS.C14.countdown,
+  C09: STORMS.C09.countdown,
+  C21: STORMS.C21.countdown
+};
+
+// ================================================================
+// LEAFLET MAP INITIALIZATION
+// ================================================================
+const map = L.map('map', {
+  center: [28.70, 77.58],
+  zoom: 10,
+  zoomControl: false, zoomSnap: .5, zoomDelta: .5, wheelPxPerZoomLevel: 100, wheelDebounceTime: 40, markerZoomAnimation: false,
+  attributionControl: false
+});
+
+// Custom dark tile layer
+// basemap: procedural demo terrain (see buildDummyMap) - no tile server needed
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// LAYER GROUPS (For clean toggling)
+const layerGroups = {
+  radar: L.layerGroup().addTo(map),      // 0: Reflectivity Z
+  velocity: L.layerGroup().addTo(map),   // 1: Radial Velocity Vr
+  insat: L.layerGroup().addTo(map),      // 2: INSAT Cooling
+  lightning: L.layerGroup().addTo(map),  // 3: Lightning Strikes
+  hail: L.layerGroup().addTo(map),       // 4: Hail MESH
+  cloudburst: L.layerGroup().addTo(map), // 5: Cloudburst
+  rangeRings: L.layerGroup().addTo(map), // 6: DWR Range Rings
+  grid: L.layerGroup().addTo(map),       // 7: 1-3km grid
+  infrastructure: L.layerGroup().addTo(map), // 8: POIs & Assets
+  impact: L.layerGroup().addTo(map)          // 9: Impact corridor & exposure
+};
+
+// ================================================================
+// BUILD MAP ELEMENTS
+// ================================================================
+
+// 1. DWR Site & Range Rings
+const DWR_COORDS = [28.25, 77.55];
+L.marker(DWR_COORDS, {
+  icon: L.divIcon({
+    className: '',
+    html: `<div style="background:#090e18; border:2px solid #06b6d4; color:#06b6d4; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:0 0 10px #06b6d4;">📡</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
+  })
+}).bindPopup('<b>IMD Doppler Weather Radar (DWR)</b><br>Frequency: C-Band (5.6 GHz)<br>Volume Scan: 14:30 IST (Clean)').addTo(layerGroups.rangeRings);
+
+[50, 100, 150].forEach(km => {
+  L.circle(DWR_COORDS, {
+    radius: km * 1000,
+    color: '#06b6d4',
+    weight: 1,
+    dashArray: '4, 8',
+    fill: false,
+    opacity: 0.35
+  }).addTo(layerGroups.rangeRings);
+
+  // Label for range ring
+  L.marker([DWR_COORDS[0] + (km * 0.009), DWR_COORDS[1]], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="color:#06b6d4; font-size:10px; opacity:0.6; white-space:nowrap;">${km} km Range</div>`,
+      iconAnchor: [0, 0]
+    })
+  }).addTo(layerGroups.rangeRings);
+});
+
+// 2. 1-3km Grid mesh
+for (let lat = 28.30; lat <= 29.05; lat += 0.027) {
+  L.polyline([[lat, 77.20], [lat, 77.95]], { color: 'rgba(255,255,255,0.04)', weight: 1 }).addTo(layerGroups.grid);
+}
+for (let lng = 77.20; lng <= 77.95; lng += 0.027) {
+  L.polyline([[28.30, lng], [29.05, lng]], { color: 'rgba(255,255,255,0.04)', weight: 1 }).addTo(layerGroups.grid);
+}
+
+// 3. Infrastructure & Villages
+const ASSETS = [
+  { lat: 28.74, lng: 77.68, name: 'Rampur', icon: '🏘', type: 'Village' },
+  { lat: 28.69, lng: 77.66, name: 'District Hospital', icon: '🏥', type: 'Critical Hospital' },
+  { lat: 28.57, lng: 77.61, name: 'Khajuri', icon: '🏘', type: 'Village' },
+  { lat: 28.51, lng: 77.72, name: 'PHC Belapur', icon: '🏥', type: 'Medical Clinic' },
+  { lat: 28.82, lng: 77.38, name: 'Mahua', icon: '🏘', type: 'Village' },
+  { lat: 28.76, lng: 77.82, name: 'Sonpur', icon: '🏘', type: 'Town Center' }
+];
+
+ASSETS.forEach(asset => {
+  L.marker([asset.lat, asset.lng], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="color:#cbd5e1; font-size:10px; background:rgba(9,14,24,0.85); border:1px solid #334155; padding:2px 6px; border-radius:3px; white-space:nowrap; display:flex; align-items:center; gap:4px;">
+        <span>${asset.icon}</span><span>${asset.name}</span>
+      </div>`,
+      iconAnchor: [0, 10]
+    })
+  }).bindPopup(`<b>${asset.name}</b><br>Category: ${asset.type}<br>Exposure Status: Monitored 1-3km grid cell`).addTo(layerGroups.infrastructure);
+});
+
+// 4. Live Dynamic Storm Layers (Moving with Lead Time)
+let stormObjects = {
+  C14: {},
+  C09: {},
+  C21: {}
+};
+
+// Storm Interactive Markers
+const mapMarkerIcons = {};
+const mapEtaLabels = {};
+
+function initStormMapVisuals() {
+  // C-14 Severe Core (Reflectivity Circles)
+  stormObjects.C14.reflCore = L.circle([28.72, 77.65], { radius: 8000, color: '#7c3aed', weight: 0, fillColor: '#7c3aed', fillOpacity: 0.5 }).addTo(layerGroups.radar);
+  stormObjects.C14.reflMid  = L.circle([28.72, 77.65], { radius: 16000, color: '#ef4444', weight: 0, fillColor: '#ef4444', fillOpacity: 0.35 }).addTo(layerGroups.radar);
+  stormObjects.C14.reflOuter= L.circle([28.72, 77.65], { radius: 26000, color: '#f59e0b', weight: 0, fillColor: '#f59e0b', fillOpacity: 0.2 }).addTo(layerGroups.radar);
+
+  // C-14 Doppler Couplet (Velocity Layer)
+  stormObjects.C14.velInbound  = L.circle([28.70, 77.63], { radius: 6000, color: '#06b6d4', weight: 0, fillColor: '#06b6d4', fillOpacity: 0.4 }).addTo(layerGroups.velocity);
+  stormObjects.C14.velOutbound = L.circle([28.74, 77.67], { radius: 6000, color: '#f97316', weight: 0, fillColor: '#f97316', fillOpacity: 0.4 }).addTo(layerGroups.velocity);
+
+  // C-14 Hail Ring
+  stormObjects.C14.hailZone = L.circle([28.72, 77.65], { radius: 12000, color: '#bae6fd', weight: 2, dashArray: '4, 4', fillColor: 'rgba(186,230,253,0.2)', fillOpacity: 0.2 }).addTo(layerGroups.hail);
+
+  // C-14 Uncertainty Fan (for >2h)
+  stormObjects.C14.fan = L.polygon([
+    [28.72, 77.65], [28.85, 77.78], [28.80, 77.88]
+  ], { color: '#f59e0b', weight: 1, dashArray: '3, 6', fillColor: 'rgba(245,158,11,0.08)', fillOpacity: 0.08 }).addTo(layerGroups.radar);
+
+  // C-09 Cloudburst Zone
+  stormObjects.C09.reflCore = L.circle([28.55, 77.58], { radius: 9000, color: '#a855f7', weight: 0, fillColor: '#a855f7', fillOpacity: 0.45 }).addTo(layerGroups.cloudburst);
+  stormObjects.C09.reflOuter= L.circle([28.55, 77.58], { radius: 20000, color: '#f59e0b', weight: 0, fillColor: '#f59e0b', fillOpacity: 0.2 }).addTo(layerGroups.radar);
+
+  // C-21 Convective Initiation (INSAT Cooling)
+  stormObjects.C21.insatCooling = L.circle([28.88, 77.42], { radius: 14000, color: '#06b6d4', weight: 1, dashArray: '5,5', fillColor: 'rgba(6,182,212,0.18)', fillOpacity: 0.18 }).addTo(layerGroups.insat);
+
+  // Lightning Strokes around C-14 & C-09
+  const ltgCoords = [
+    [28.73, 77.66], [28.70, 77.64], [28.75, 77.67], [28.69, 77.62], [28.72, 77.69],
+    [28.56, 77.59], [28.54, 77.57]
+  ];
+  ltgCoords.forEach(c => {
+    L.marker(c, {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="ltg-flash" style="color:#f59e0b; font-size:13px; text-shadow:0 0 6px #f59e0b;">⚡</div>`,
+        iconAnchor: [7, 7]
+      })
+    }).addTo(layerGroups.lightning);
+  });
+
+  // Storm Center Markers with Click & Popups
+  ['C14', 'C09', 'C21'].forEach(key => {
+    const s = STORMS[key];
+    const marker = L.marker([s.lat, s.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="background:${s.color}33; border:2px solid ${s.color}; color:${s.color}; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; box-shadow:0 0 12px ${s.color}; cursor:pointer;">${key==='C14'?'⛈':key==='C09'?'🌧':'🌩'}</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      })
+    }).addTo(map);
+
+    marker.bindPopup(`
+      <div style="font-family:sans-serif; font-size:11px; color:#e2e8f0; min-width:180px;">
+        <strong style="color:${s.color}; font-size:13px;">${s.name}</strong><br>
+        <span style="color:#94a3b8;">${s.subtitle}</span>
+        <hr style="border:none; border-top:1px solid #334155; margin:6px 0;">
+        <b>ETA:</b> <span id="popup-eta-${key}">${formatSeconds(countdownState[key])}</span><br>
+        <b>Confidence:</b> ${s.confidence}<br>
+        <button onclick="selectStorm('${key}')" style="margin-top:8px; width:100%; background:${s.color}; color:#090e18; border:none; padding:4px 8px; border-radius:3px; font-weight:800; cursor:pointer;">Inspect in Detail</button>
+      </div>
+    `);
+
+    marker.on('click', () => selectStorm(key));
+    mapMarkerIcons[key] = marker;
+
+    // Map floating ETA labels
+    const etaLabel = L.marker([s.lat + 0.02, s.lng + 0.02], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div id="map-lbl-${key}" style="background:rgba(9,14,24,0.9); border:1px solid ${s.color}; color:${s.color}; padding:2px 7px; border-radius:4px; font-size:10px; font-weight:800; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
+          ${s.id} ETA: ${formatSeconds(countdownState[key])}
+        </div>`,
+        iconAnchor: [0, 0]
+      })
+    }).addTo(map);
+    mapEtaLabels[key] = etaLabel;
+  });
+}
+
+initStormMapVisuals();
+// ================= v3: DUMMY BASEMAP + RADAR DISPLAY =================
+(function () {
+  const KM = 111, rad = Math.PI / 180;
+  const hash = (x, y) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+  function vn(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  const elev = (la, ln) => { const x = ln * 14, y = la * 14; return .55 * vn(x, y) + .3 * vn(x * 2.1, y * 2.1) + .15 * vn(x * 4.3, y * 4.3) + Math.max(0, la - 28.78) * 2.2; };
+
+  // --- procedural terrain tiles aligned to the lat/lng grid (hillshade + contours + 0.1 deg graticule)
+  const Terrain = L.GridLayer.extend({ createTile(co) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    const c = cv.getContext('2d'), img = c.createImageData(128, 128), z = co.z, o = co.scaleBy(new L.Point(256, 256));
+    const lngs = [], lats = [];
+    for (let i = 0; i < 128; i++) { lngs.push(map.unproject(o.add([i * 2, 0]), z).lng); lats.push(map.unproject(o.add([0, i * 2]), z).lat); }
+    for (let j = 0; j < 128; j++) for (let i = 0; i < 128; i++) {
+      const la = lats[j], ln = lngs[i], e = elev(la, ln), sh = (elev(la + .004, ln - .004) - e) * 14;
+      let r, g, b;
+      if (e < .3) { r = 8; g = 24 + e * 20; b = 46 + e * 30; }
+      else { const t = Math.min(1.3, e), k = sh * 38; r = 12 + t * 26 + k; g = 24 + t * 34 + k; b = 34 + t * 34 + k; if ((e * 12) % 1 < .07) { r += 9; g += 9; b += 9; } }
+      const p = (j * 128 + i) * 4; img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = b; img.data[p + 3] = 255;
+    }
+    c.putImageData(img, 0, 0);
+    c.strokeStyle = 'rgba(59,130,246,.16)'; c.lineWidth = .6;
+    const nw = map.unproject(o, z), se = map.unproject(o.add([256, 256]), z);
+    for (let la = Math.ceil(se.lat * 10) / 10; la <= nw.lat; la += .1) { const y = (map.project([la, 0], z).y - o.y) / 2; c.beginPath(); c.moveTo(0, y); c.lineTo(128, y); c.stroke(); }
+    for (let ln = Math.ceil(nw.lng * 10) / 10; ln <= se.lng; ln += .1) { const x = (map.project([0, ln], z).x - o.x) / 2; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, 128); c.stroke(); }
+    return cv;
+  } });
+    window.demoNoise = { hash, vn, elev };
+
+  // --- dummy rivers, roads, district boundary (toggle with "Critical Infrastructure")
+  const IG = layerGroups.infrastructure;
+  const line = (pts, o) => L.polyline(pts, Object.assign({ interactive: false, smoothFactor: 1.5 }, o)).addTo(IG);
+  const lbl = (ll, t, col) => L.marker(ll, { interactive: false, icon: L.divIcon({ className: '', iconAnchor: [0, 0], html: `<div style="font-size:10px;font-style:italic;color:${col};white-space:nowrap;text-shadow:0 0 4px #000">${t}</div>` }) }).addTo(IG);
+  line([[29.05,77.35],[28.95,77.42],[28.86,77.40],[28.78,77.47],[28.70,77.52],[28.62,77.56],[28.55,77.63],[28.45,77.66],[28.30,77.72]], { color: '#1e6aa8', weight: 3, opacity: .85 });
+  line([[28.80,77.88],[28.72,77.78],[28.64,77.70],[28.55,77.63]], { color: '#1e6aa8', weight: 1.6, opacity: .7 });
+  line([[28.36,77.40],[28.45,77.50],[28.52,77.58],[28.55,77.63]], { color: '#1e6aa8', weight: 1.6, opacity: .7 });
+  lbl([28.88, 77.37], 'Kali Nadi', '#5aa9e6');
+  line([[28.35,77.95],[28.55,77.78],[28.69,77.66],[28.74,77.68],[28.90,77.55],[29.05,77.45]], { color: '#94a3b8', weight: 2.4, opacity: .75 });
+  line([[28.30,77.35],[28.52,77.55],[28.57,77.61],[28.51,77.72],[28.45,77.95]], { color: '#64748b', weight: 1.5, opacity: .7 });
+  line([[28.82,77.38],[28.78,77.60],[28.76,77.82]], { color: '#64748b', weight: 1.5, opacity: .7 });
+  lbl([28.84, 77.58], 'NH-24', '#cbd5e1');
+  line([[29.04,77.28],[28.93,77.72],[28.64,77.93],[28.34,77.80],[28.31,77.40],[28.60,77.22],[29.04,77.28]], { color: '#475569', weight: 1.2, dashArray: '2,6', opacity: .9 });
+
+  // --- radar overlay layers
+  const LV = [{ z: 20, c: '#10b981', a: .30, s: 1 }, { z: 35, c: '#f59e0b', a: .38, s: .66 }, { z: 45, c: '#ef4444', a: .48, s: .42 }, { z: 55, c: '#7c3aed', a: .62, s: .22 }];
+  const BASE = { C14: { r: 26, e: .62, seed: 3 }, C09: { r: 20, e: .8, seed: 7 }, C21: { r: 12, e: .8, seed: 11 } };
+  const GF = { C14: t => t <= 2 ? 1 : Math.max(.45, 1 - .28 * (t - 2)), C09: t => t <= 2 ? 1 : Math.max(.5, 1 - .25 * (t - 2)), C21: t => Math.min(.8, .4 + .12 * t) };
+  const hz = t => t <= 2 ? 1 - .08 * t : .84 * Math.exp(-(t - 2) * .3);
+  function blob(c, rx, ry, rot, seed, amp) {
+    amp = amp == null ? .22 : amp;
+    const P = [], n = 26, cr = Math.cos(rot), sr = Math.sin(rot), kl = KM * Math.cos(c.lat * rad);
+    for (let i = 0; i < n; i++) {
+      const a = i / n * 6.2832, k = 1 + amp * (vn(Math.cos(a) * 1.6 + seed, Math.sin(a) * 1.6 + seed * 2) * 2 - 1), x = Math.cos(a) * rx * k, y = Math.sin(a) * ry * k;
+      P.push([c.lat + (x * sr + y * cr) / KM, c.lng + (x * cr - y * sr) / kl]);
+    }
+    return P;
+  }
+  const CVR = L.canvas({ padding: .3 });   // canvas renderer for the many short-lived lightning shapes
+  const rm = (g, l) => l && g.removeLayer(l);
+  rm(layerGroups.radar, stormObjects.C14.reflCore); rm(layerGroups.radar, stormObjects.C14.reflMid); rm(layerGroups.radar, stormObjects.C14.reflOuter);
+  rm(layerGroups.hail, stormObjects.C14.hailZone); rm(layerGroups.cloudburst, stormObjects.C09.reflCore); rm(layerGroups.radar, stormObjects.C09.reflOuter);
+  layerGroups.lightning.clearLayers();
+
+  const poly = (g, o) => L.polygon([[0, 0], [0, 0], [0, 0]], Object.assign({ interactive: false }, o)).addTo(g);
+  const tip = (p, t) => p.bindTooltip(t, { permanent: true, direction: 'top', className: 'mr-tip', offset: [0, -4] });
+  const R = {}, HL = {}, CB = {}, GFR = {};
+  ['C14', 'C09', 'C21'].forEach(k => { R[k] = LV.map(l => poly(layerGroups.radar, { stroke: false, fillColor: l.c, fillOpacity: l.a })); });
+  ['C14', 'C09'].forEach(k => {
+    HL[k] = tip(poly(layerGroups.hail, { color: '#bae6fd', weight: 1.5, dashArray: '5,4', fillColor: '#bae6fd', fillOpacity: .2 }), 'Hail');
+    CB[k] = { out: poly(layerGroups.cloudburst, { color: '#c084fc', weight: 1, dashArray: '4,4', fillColor: '#a855f7', fillOpacity: .2 }),
+              core: tip(poly(layerGroups.cloudburst, { color: '#d8b4fe', weight: 2, fillColor: '#a855f7', fillOpacity: .5, className: 'cb-pulse' }), 'Cloudburst') };
+    GFR[k] = L.polyline([[0, 0], [0, 0]], { color: '#22d3ee', weight: 2.5, dashArray: '8,5', className: 'gust-front', interactive: false }).addTo(layerGroups.velocity);
+  });
+  const hide = (p) => p.setStyle({ opacity: 0, fillOpacity: 0 });
+
+  function refreshRadar(t) {
+    const f = hz(t), LG = layerGroups.lightning; LG.clearLayers();
+    ['C14', 'C09', 'C21'].forEach(k => {
+      const s = STORMS[k], b = BASE[k], g = GF[k](t), c = { lat: s.lat + s.vecLat * t, lng: s.lng + s.vecLng * t };
+      const rot = Math.atan2(s.vecLat * KM, s.vecLng * 95), kl = KM * Math.cos(c.lat * rad), sp = parseFloat(s.movement.match(/(\d+) km/)[1]);
+      R[k].forEach((p, i) => { const l = LV[i], on = 20 + g * 40 >= l.z; p.setStyle({ fillOpacity: on ? l.a : 0 }); if (on) p.setLatLngs(blob(c, b.r * l.s * g, b.r * l.s * g * b.e, rot, b.seed + i)); });
+      if (HL[k]) {                                   // hail swath: narrow, trails the core, extends ahead
+        const hp = Math.round(s.hail.pct * f), H = HL[k];
+        if (hp >= 25) {
+          const ahead = sp * .5, trail = 10, sh = (ahead - trail) / 2, mid = { lat: c.lat + Math.sin(rot) * sh / KM, lng: c.lng + Math.cos(rot) * sh / kl };
+          H.setLatLngs(blob(mid, (ahead + trail) / 2 + 4, 3 + hp / 40, rot, b.seed + 20, .08));
+          H.setStyle({ opacity: .9, fillOpacity: .12 + hp / 400 });
+          H.setTooltipContent(`Hail swath · ${hp}% · ${(s.hail.desc.match(/[\d.]+–[\d.]+ cm/) || ['size uncertain'])[0]}`); H.openTooltip(mid);
+        } else { hide(H); H.closeTooltip(); }
+        const cp = Math.round(s.cloudburst.pct * f), cb = CB[k];   // cloudburst: 50 mm/hr envelope + >=100 mm/hr core
+        if (cp >= 30) { cb.out.setLatLngs(blob(c, 13, 9, rot, b.seed + 30)); cb.out.setStyle({ opacity: .8, fillOpacity: .2 }); } else hide(cb.out);
+        if (cp >= 50) { cb.core.setLatLngs(blob(c, 7, 5, rot, b.seed + 40)); cb.core.setStyle({ opacity: 1 }); cb.core.setTooltipContent(`Cloudburst ≥100 mm/hr · ${cp}%`); cb.core.openTooltip(c); }
+        else { hide(cb.core); cb.core.closeTooltip(); }
+        const gp = s.downburst.pct * f, gl = GFR[k];             // gust front arc ahead of the cell
+        if (gp >= 25) { const pts = []; for (let a = -70; a <= 70; a += 10) { const ang = rot + a * rad, Rk = b.r * .55 * g; pts.push([c.lat + Math.sin(ang) * Rk / KM, c.lng + Math.cos(ang) * Rk / kl]); } gl.setLatLngs(pts); gl.setStyle({ opacity: .9 }); }
+        else gl.setStyle({ opacity: 0 });
+      }
+      // lightning density: 3 km cells + individual strokes + a few flashing bolts
+      const n = Math.round(s.lightning.pct * .55 * f), cells = {}, pts = [];
+      for (let i = 0; i < n; i++) {
+        const d = Math.pow(hash(i, b.seed), .7) * (k === 'C21' ? 6 : 14), a = hash(i + 9, b.seed) * 6.283;
+        const la = c.lat + Math.sin(a) * d / KM, ln = c.lng + Math.cos(a) * d / kl, ci = Math.floor(la / .027), cj = Math.floor(ln / .027), key = ci + '_' + cj;
+        (cells[key] = cells[key] || { la: ci * .027, ln: cj * .027, n: 0 }).n++; pts.push([la, ln]);
+      }
+      Object.values(cells).forEach(q => L.rectangle([[q.la, q.ln], [q.la + .027, q.ln + .027]], { renderer: CVR, stroke: false, fillColor: '#f59e0b', fillOpacity: Math.min(.6, .12 + q.n * .09), interactive: false }).addTo(LG));
+      pts.forEach((p, i) => {
+        L.circleMarker(p, { renderer: CVR, radius: 1.8, stroke: false, fillColor: '#fde68a', fillOpacity: .9, interactive: false }).addTo(LG);
+        if (i < 4) L.marker(p, { interactive: false, icon: L.divIcon({ className: '', iconAnchor: [6, 6], html: '<div class="ltg-flash" style="color:#fbbf24;font-size:12px;text-shadow:0 0 6px #f59e0b">⚡</div>' }) }).addTo(LG);
+      });
+    });
+  }
+  const _upd = updateStormPositionsByLeadTime;
+  let _raf = 0, _pt = 0;   // coalesce overlay redraws to one per animation frame while scrubbing/playing
+  updateStormPositionsByLeadTime = function (t) { _upd(t); _pt = t; if (!_raf) _raf = requestAnimationFrame(() => { _raf = 0; refreshRadar(_pt); }); };
+  refreshRadar(0);
+})();
+// ================= v4: MORE MAP DETAIL (land use, settlements, roads, rail, canals, labels) =================
+(function () {
+  const { hash, vn, elev } = window.demoNoise, KM = 111, rad = Math.PI / 180, CL = Math.cos(28.7 * rad), IG = layerGroups.infrastructure;
+  const NM = ['Alipur','Bhagwanpur','Chandpur','Dhaulana','Ekta Nagar','Faizpur','Gopalpur','Harauli','Islamnagar','Jalalpur','Kailashpur','Lakhanpur','Madhopur','Nagla Kalan','Obra','Pipli','Qasimpur','Rasoolpur','Saidpur','Tikri','Umri','Vijaypur','Wazirpur','Yusufpur','Zainpur','Barauli','Chhaprauli','Dadri Khurd','Ganeshpur','Hasanpur'];
+  const HAM = [];
+  for (let i = 0; i < 30; i++) { const la = 28.32 + hash(i, 1.3) * .72, ln = 77.22 + hash(i, 2.7) * .72; if (elev(la, ln) >= .34) HAM.push({ la, ln, n: NM[i], r: .6 + hash(i, 5) * .7 }); }
+  const SET = ASSETS.map(a => ({ la: a.lat, ln: a.lng, r: 1.6 })).concat(HAM);
+  window.demoHamlets = HAM;   // shared with the impact-corridor exposure calculation
+
+  // --- land-use layer: field mosaic, forest on slopes, built-up patches, marsh
+  const Detail = L.GridLayer.extend({ createTile(co) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    if (co.z < 10) return cv;
+    const c = cv.getContext('2d'), img = c.createImageData(256, 256), z = co.z, o = co.scaleBy(new L.Point(256, 256)), lngs = [], lats = [];
+    for (let i = 0; i < 256; i++) { lngs.push(map.unproject(o.add([i, 0]), z).lng); lats.push(map.unproject(o.add([0, i]), z).lat); }
+    const near = SET.filter(s => s.la > lats[255] - .03 && s.la < lats[0] + .03 && s.ln > lngs[0] - .03 && s.ln < lngs[255] + .03);
+    const T = [[34, 70, 44], [64, 78, 38], [78, 66, 36], [40, 60, 60]];
+    for (let j = 0; j < 256; j++) for (let i = 0; i < 256; i++) {
+      const la = lats[j], ln = lngs[i], e = elev(la, ln); if (e < .3) continue;
+      let r, g, b, a;
+      const wx = ln * 260 + 2 * vn(ln * 40, la * 40), wy = la * 260 + 2 * vn(ln * 40 + 9, la * 40 + 9), fi = Math.floor(wx), fj = Math.floor(wy), h = hash(fi, fj);
+      if (e > .78 && vn(ln * 30, la * 30) > .45) { r = 14; g = 58 + hash(i, j) * 18; b = 38; a = 150; }
+      else if (e < .36) { r = 30; g = 95; b = 110; a = 80; }
+      else { const t = T[h < .3 ? 0 : h < .55 ? 1 : h < .8 ? 2 : 3]; r = t[0]; g = t[1]; b = t[2]; a = 100; if (wx - fi < .07 || wy - fj < .07) { r *= .6; g *= .6; b *= .6; a = 135; } }
+      for (const s of near) { const d = Math.hypot((la - s.la) * KM, (ln - s.ln) * KM * CL); if (d < s.r * (.8 + .4 * vn(ln * 90, la * 90))) { r = g = b = 140 + hash(i, j) * 50; a = 130; break; } }
+      const p = (j * 256 + i) * 4; img.data[p] = r; img.data[p + 1] = g; img.data[p + 2] = b; img.data[p + 3] = a;
+    }
+    c.putImageData(img, 0, 0); return cv;
+  } });
+
+  // --- vector detail
+  const ln_ = (pts, o) => L.polyline(pts, Object.assign({ interactive: false, smoothFactor: 1.2 }, o)).addTo(IG);
+  const txt = (ll, t, css, g) => L.marker(ll, { interactive: false, icon: L.divIcon({ className: '', iconAnchor: [0, 0], html: `<div style="white-space:nowrap;text-shadow:0 0 4px #000;${css}">${t}</div>` }) }).addTo(g || IG);
+  // minor roads: each hamlet links to its nearest neighbour with a slightly wiggly path
+  HAM.forEach((h, i) => {
+    let best = null, bd = 1e9; SET.forEach(s => { if (s === h) return; const d = Math.hypot(s.la - h.la, (s.ln - h.ln) * CL); if (d < bd) { bd = d; best = s; } });
+    const pts = [[h.la, h.ln]]; for (let k = 1; k <= 2; k++) pts.push([h.la + (best.la - h.la) * k / 3 + (hash(i, k) - .5) * .012, h.ln + (best.ln - h.ln) * k / 3 + (hash(i, k + 4) - .5) * .012]);
+    pts.push([best.la, best.ln]); ln_(pts, { color: '#52627a', weight: 1, opacity: .8 });
+  });
+  // railway (dark bed + light dashes) and canals
+  const RAIL = [[28.30,77.62],[28.45,77.64],[28.62,77.66],[28.69,77.70],[28.80,77.76],[29.0,77.82]];
+  ln_(RAIL, { color: '#0b1220', weight: 4, opacity: .9 }); ln_(RAIL, { color: '#cbd5e1', weight: 2, dashArray: '6,6', opacity: .8 });
+  txt([28.695, 77.705], '🚉 Rampur Jn', 'font-size:10px;color:#cbd5e1');
+  ln_([[28.33,77.30],[28.50,77.44],[28.66,77.52],[28.86,77.62]], { color: '#2b8cc4', weight: 1.5, dashArray: '2,4', opacity: .85 });
+  ln_([[28.40,77.88],[28.52,77.82],[28.60,77.74]], { color: '#2b8cc4', weight: 1.5, dashArray: '2,4', opacity: .85 });
+  // block boundaries + region labels
+  ln_([[28.95,77.28],[28.80,77.55],[28.64,77.93]], { color: '#475569', weight: 1, dashArray: '2,6' });
+  ln_([[28.31,77.65],[28.58,77.62],[28.60,77.22]], { color: '#475569', weight: 1, dashArray: '2,6' });
+  const cap = 'font-size:10px;letter-spacing:3px;color:rgba(148,163,184,.55);font-weight:700';
+  txt([28.98, 77.70], 'SHIVALIK FOOTHILLS', cap); txt([28.36, 77.50], 'GANGETIC PLAIN', cap);
+  txt([28.77, 77.52], 'RAMPUR BLOCK', cap); txt([28.50, 77.40], 'KHAJURI BLOCK', cap); txt([28.60, 77.85], 'SONPUR BLOCK', cap);
+  // hamlets: dots + popups; names appear from zoom 11
+  const LBL = L.layerGroup();
+  HAM.forEach(h => {
+    L.circleMarker([h.la, h.ln], { radius: 2.4, stroke: false, fillColor: '#e2e8f0', fillOpacity: .85 }).bindPopup(`<b>${h.n}</b><br>Hamlet · monitored 1–3 km cell`).addTo(IG);
+    txt([h.la, h.ln + .004], h.n, 'font-size:10px;color:#94a3b8', LBL);
+  });
+  const syncLbl = () => { if (map.getZoom() >= 11) { if (!IG.hasLayer(LBL)) IG.addLayer(LBL); } else IG.removeLayer(LBL); };
+  map.on('zoomend', syncLbl); syncLbl();
+  // scale bar + coordinate / elevation readout
+  L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
+
+  // ===== v5: off-thread tile rendering (Web Workers), tile cache, retina-sharp output =====
+  function tileKernel(m) {
+    var lats = m.lats, lngs = m.lngs, near = m.near, N = lats.length, out = new Uint8ClampedArray(N * N * 4), KM = 111, CL = Math.cos(28.7 * Math.PI / 180), det = m.z >= 10, i, j, n;
+    function hash(x, y) { var s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+    function vn(x, y) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf), a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+    function elev(la, ln) { var x = ln * 14, y = la * 14; return .55 * vn(x, y) + .3 * vn(x * 2.1, y * 2.1) + .15 * vn(x * 4.3, y * 4.3) + Math.max(0, la - 28.78) * 2.2; }
+    var GW = Math.ceil(N / 2) + 2, E = new Float32Array(GW * GW);       // elevation on a 2px grid, bilinear-sampled below
+    for (j = 0; j < GW; j++) { var gla = lats[Math.min(N - 1, j * 2)]; for (i = 0; i < GW; i++) E[j * GW + i] = elev(gla, lngs[Math.min(N - 1, i * 2)]); }
+    var SH = new Float32Array(GW * GW); for (j = 0; j < GW; j++) for (i = 0; i < GW; i++) SH[j * GW + i] = E[Math.max(0, j - 1) * GW + Math.max(0, i - 1)] - E[j * GW + i];
+    var lfi = -1e9, lfj = -1e9, lh = 0;
+    function samp(x, y) { x = Math.max(0, x) / 2; y = Math.max(0, y) / 2; var gi = Math.floor(x), gj = Math.floor(y), tx = x - gi, ty = y - gj, p = gj * GW + gi; return (E[p] * (1 - tx) + E[p + 1] * tx) * (1 - ty) + (E[p + GW] * (1 - tx) + E[p + GW + 1] * tx) * ty; }
+    var WG = Math.ceil(N / 4) + 2, WX = new Float32Array(WG * WG), WY = new Float32Array(WG * WG);   // field-warp noise on a 4px grid
+    if (det) for (j = 0; j < WG; j++) { var wla = lats[Math.min(N - 1, j * 4)]; for (i = 0; i < WG; i++) { var wln = lngs[Math.min(N - 1, i * 4)]; WX[j * WG + i] = 2 * vn(wln * 40, wla * 40); WY[j * WG + i] = 2 * vn(wln * 40 + 9, wla * 40 + 9); } }
+    function ws(A, x, y) { x /= 4; y /= 4; var gi = Math.floor(x), gj = Math.floor(y), tx = x - gi, ty = y - gj, p = gj * WG + gi; return (A[p] * (1 - tx) + A[p + 1] * tx) * (1 - ty) + (A[p + WG] * (1 - tx) + A[p + WG + 1] * tx) * ty; }
+    var dc = Math.abs(lngs[2] - lngs[0]) || .001, T = [[34, 70, 44], [64, 78, 38], [78, 66, 36], [40, 60, 60]];
+    for (j = 0; j < N; j++) for (i = 0; i < N; i++) {
+      var la = lats[j], ln = lngs[i], gx = i / 2, gy = j / 2, gi0 = gx | 0, gj0 = gy | 0, tx0 = gx - gi0, ty0 = gy - gj0, pp = gj0 * GW + gi0, w1 = (1 - tx0) * (1 - ty0), w2 = tx0 * (1 - ty0), w3 = (1 - tx0) * ty0, w4 = tx0 * ty0;
+      var e = E[pp] * w1 + E[pp + 1] * w2 + E[pp + GW] * w3 + E[pp + GW + 1] * w4, sh = SH[pp] * w1 + SH[pp + 1] * w2 + SH[pp + GW] * w3 + SH[pp + GW + 1] * w4, r, g, b;
+      if (e < .3) { r = 8; g = 24 + e * 20; b = 46 + e * 30; if (e > .285) { r += 14; g += 22; b += 30; } }
+      else {
+        var t = Math.min(1.3, e), k = Math.max(-40, Math.min(40, sh * 14 * (.004 / dc) * 42)), c12 = e * 12;
+        r = 12 + t * 26 + k; g = 24 + t * 34 + k; b = 34 + t * 34 + k;
+        if (c12 % 1 < .05) { r += 8; g += 8; b += 8; } if ((c12 / 5) % 1 < .01) { r += 14; g += 14; b += 14; }
+        if (det) {
+          var dr, dg, db, a = 0;
+          var wx = ln * 260 + ws(WX, i, j), wy = la * 260 + ws(WY, i, j), fi = Math.floor(wx), fj = Math.floor(wy); if (fi !== lfi || fj !== lfj) { lfi = fi; lfj = fj; lh = hash(fi, fj); } var h = lh;
+          if (e > .78 && vn(ln * 30, la * 30) > .45) { dr = 14; dg = 58 + hash(i, j) * 18; db = 38; a = 150; }
+          else if (e < .36) { dr = 30; dg = 95; db = 110; a = 80; }
+          else { var q = T[h < .3 ? 0 : h < .55 ? 1 : h < .8 ? 2 : 3]; dr = q[0]; dg = q[1]; db = q[2]; a = 100; if (wx - fi < .07 || wy - fj < .07) { dr *= .6; dg *= .6; db *= .6; a = 135; } }
+          for (n = 0; n < near.length; n++) { var s = near[n], dy = (la - s[0]) * KM, dx = (ln - s[1]) * KM * CL, d2 = dx * dx + dy * dy, rr = s[2] * 1.2; if (d2 < rr * rr && Math.sqrt(d2) < s[2] * (.8 + .4 * vn(ln * 90, la * 90))) { dr = dg = db = 140 + hash(i, j) * 50; a = 130; break; } }
+          var f = a / 255; r = r * (1 - f) + dr * f; g = g * (1 - f) + dg * f; b = b * (1 - f) + db * f;
+        }
+      }
+      var p2 = (j * N + i) * 4; out[p2] = r; out[p2 + 1] = g; out[p2 + 2] = b; out[p2 + 3] = 255;
+    }
+    return out;
+  }
+  let pool = [], rr = 0, uid = 0, pend = {};
+  const flush = () => { pool = []; Object.values(pend).forEach(p => setTimeout(() => p.cb(tileKernel(p.m)), 0)); pend = {}; };
+  try {
+    const url = URL.createObjectURL(new Blob(['var K=' + tileKernel.toString() + ';onmessage=function(e){var m=e.data,b=K(m);postMessage({id:m.id,buf:b.buffer},[b.buffer]);};'], { type: 'application/javascript' }));
+    const nW = Math.min(3, Math.max(1, (navigator.hardwareConcurrency || 4) - 1));
+    for (let i = 0; i < nW; i++) { const w = new Worker(url); w.onmessage = ev => { const p = pend[ev.data.id]; if (p) { delete pend[ev.data.id]; p.cb(new Uint8ClampedArray(ev.data.buf)); } }; w.onerror = flush; pool.push(w); }
+  } catch (_) { pool = []; }
+  const compute = (m, cb) => { if (pool.length) { m.id = ++uid; pend[m.id] = { cb, m }; pool[rr++ % pool.length].postMessage(m); } else setTimeout(() => cb(tileKernel(m)), 0); };
+
+  const S = ((window.devicePixelRatio || 1) >= 1.5 && (navigator.hardwareConcurrency || 4) >= 8) ? 2 : 1, N = 256 * S,   // 2x only on retina + 8 or more cores
+     cache = new Map(), CAP = S === 2 ? 48 : 120;
+  function getPx(co, cb) {
+    const key = co.z + '/' + co.x + '/' + co.y, hit = cache.get(key);
+    if (hit) { cache.delete(key); cache.set(key, hit); return cb(hit); }
+    const o = co.scaleBy(new L.Point(256, 256)), lats = new Float64Array(N), lngs = new Float64Array(N);
+    for (let i = 0; i < N; i++) { lngs[i] = map.unproject(o.add([i / S, 0]), co.z).lng; lats[i] = map.unproject(o.add([0, i / S]), co.z).lat; }
+    const near = SET.filter(s => s.la > lats[N - 1] - .03 && s.la < lats[0] + .03 && s.ln > lngs[0] - .03 && s.ln < lngs[N - 1] + .03).map(s => [s.la, s.ln, s.r]);
+    compute({ z: co.z, lats, lngs, near }, px => { cache.set(key, px); if (cache.size > CAP) cache.delete(cache.keys().next().value); cb(px); });
+  }
+  function graticule(ctx, co) {
+    const z = co.z, o = co.scaleBy(new L.Point(256, 256)), nw = map.unproject(o, z), se = map.unproject(o.add([256, 256]), z);
+    ctx.save(); ctx.scale(S, S); ctx.strokeStyle = 'rgba(59,130,246,.16)'; ctx.lineWidth = .7; ctx.beginPath();
+    for (let la = Math.ceil(se.lat * 10) / 10; la <= nw.lat; la += .1) { const y = map.project([la, 0], z).y - o.y; ctx.moveTo(0, y); ctx.lineTo(256, y); }
+    for (let ln = Math.ceil(nw.lng * 10) / 10; ln <= se.lng; ln += .1) { const x = map.project([0, ln], z).x - o.x; ctx.moveTo(x, 0); ctx.lineTo(x, 256); }
+    ctx.stroke(); ctx.restore();
+  }
+  const BaseMap = L.GridLayer.extend({ createTile(co, done) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = N;
+    getPx(co, px => { const c = cv.getContext('2d'); c.putImageData(new ImageData(px, N, N), 0, 0); graticule(c, co); done(null, cv); });
+    return cv;
+  } });
+  new BaseMap({ maxZoom: 19, updateWhenZooming: false, updateInterval: 120, keepBuffer: 3 }).addTo(map);
+  // warm the cache for the storm close-ups while the browser is idle
+  const idle = window.requestIdleCallback || (f => setTimeout(f, 800)), q = [];
+  Object.keys(STORMS).forEach(k => { const t = map.project([STORMS[k].lat, STORMS[k].lng], 11).divideBy(256).floor(); for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) q.push({ x: t.x + dx, y: t.y + dy, z: 11 }); });
+  const drain = () => { const co = q.shift(); if (!co) return; co.scaleBy = (p) => new L.Point(co.x * p.x, co.y * p.y); getPx(co, () => idle(drain)); };
+  idle(() => setTimeout(drain, 1500));
+  // road casing for contrast, and keep the map correctly sized when panels resize
+  L.polyline([[28.35,77.95],[28.55,77.78],[28.69,77.66],[28.74,77.68],[28.90,77.55],[29.05,77.45]], { color: '#0b1220', weight: 5, opacity: .85, interactive: false }).addTo(IG).bringToBack();
+  let _rs = 0; new ResizeObserver(() => { cancelAnimationFrame(_rs); _rs = requestAnimationFrame(() => map.invalidateSize({ animate: false })); }).observe(document.getElementById('map-pane'));
+  const ro = document.createElement('div'); ro.id = 'coord-readout'; ro.textContent = 'Move cursor over map'; document.getElementById('map-pane').appendChild(ro);
+  let _mv = 0, _ll = null; map.on('mousemove', e => { _ll = e.latlng; if (!_mv) _mv = requestAnimationFrame(() => { _mv = 0; const m = Math.round(180 + Math.max(0, elev(_ll.lat, _ll.lng) - .3) * 900); ro.textContent = `${_ll.lat.toFixed(3)}°N  ${_ll.lng.toFixed(3)}°E · elev ≈ ${m} m`; }); });
+})();
+
+// ================================================================
+// LIVE COUNTDOWN TIMER & CLOCK
+// ================================================================
+function hm(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+// Precision follows skill: seconds only in the last 15 min, ~HH:MM within the
+// confident 0-2 h range, and an HH:MM-HH:MM window beyond 2 h (probabilistic).
+function formatSeconds(sec) {
+  sec = Math.max(0, Math.round(sec));
+  if (sec <= 900) {
+    const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+    const s = String(sec % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+  if (sec <= 7200) return '~' + hm(sec);
+  return hm(sec * 0.85) + '\u2013' + hm(sec * 1.15);
+}
+
+function updateCountdowns() {
+  ['C14', 'C09', 'C21'].forEach(key => {
+    if (countdownState[key] > 0) countdownState[key]--;
+    const formatted = formatSeconds(remaining(key));
+
+    // Update Sidebar Cards
+    const cardEl = document.getElementById(`sidebar-countdown-${key}`);
+    if (cardEl) cardEl.textContent = formatted;
+
+    // Update Map ETA Label
+    const mapLblEl = document.getElementById(`map-lbl-${key}`);
+    if (mapLblEl) mapLblEl.textContent = `${key} ETA: ${formatted}`;
+
+    // Update Popup if open
+    const popupEl = document.getElementById(`popup-eta-${key}`);
+    if (popupEl) popupEl.textContent = formatted;
+
+    // Update Hero if active
+    if (activeStormKey === key) {
+      const heroEl = document.getElementById('hero-main-countdown');
+      heroEl.textContent = formatted;
+      const rem = remaining(key), w = Math.round(3 + rem / 60 * 0.15);
+      heroEl.classList.toggle('window', rem > 7200);
+      document.getElementById('hero-count-label').textContent = rem > 7200 ? 'Estimated arrival window (probabilistic):' : rem > 900 ? 'Time to first ground impact (approx.):' : 'Time to first ground impact:';
+      const at = new Date(Date.now() + rem * 1000).toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit'});
+      document.getElementById('hero-eta-win').textContent = rem === 0 ? 'IMPACT NOW / PASSED' : `Arrives ~${at} IST ± ${w} min`;
+    }
+  });
+
+  // IST Clock
+  const now = new Date();
+  document.getElementById('wall-clock').textContent = now.toLocaleTimeString('en-IN', { hour12: false }) + ' IST';
+}
+setInterval(updateCountdowns, 1000);
+
+document.getElementById('latency-text').title='Target SLA: under 5 min from data arrival to alert (ingest, fuse, infer, notify). Illustrative budget, not a measured latency.';
+
+// ================================================================
+// INTERACTIVE 0-6H NOWCAST TIMELINE / SCRUBBER
+// ================================================================
+function updateStormPositionsByLeadTime(tHr) {
+  currentLeadTimeHr = tHr; refreshHazards();
+  const _w = document.getElementById('timeline-track-wrapper');
+  _w.setAttribute('aria-valuenow', tHr.toFixed(1));
+  _w.setAttribute('aria-valuetext', 'T+' + tHr.toFixed(1) + ' hours, ' + (tHr <= 2 ? 'confident nowcast' : 'probabilistic outlook'));
+  document.getElementById('time-badge-text').textContent = `T + ${tHr.toFixed(1)} hr (${tHr <= 2.0 ? 'Confident Nowcast' : 'Probabilistic Outlook'})`;
+  followActiveStorm(tHr);
+  scheduleImpact();
+
+  // Move C-14 along NE vector
+  const c14Lat = STORMS.C14.lat + (STORMS.C14.vecLat * tHr);
+  const c14Lng = STORMS.C14.lng + (STORMS.C14.vecLng * tHr);
+  mapMarkerIcons.C14.setLatLng([c14Lat, c14Lng]);
+  mapEtaLabels.C14.setLatLng([c14Lat + 0.02, c14Lng + 0.02]);
+  stormObjects.C14.reflCore.setLatLng([c14Lat, c14Lng]);
+  stormObjects.C14.reflMid.setLatLng([c14Lat, c14Lng]);
+  stormObjects.C14.reflOuter.setLatLng([c14Lat, c14Lng]);
+  stormObjects.C14.velInbound.setLatLng([c14Lat - 0.02, c14Lng - 0.02]);
+  stormObjects.C14.velOutbound.setLatLng([c14Lat + 0.02, c14Lng + 0.02]);
+  stormObjects.C14.hailZone.setLatLng([c14Lat, c14Lng]);
+
+  // Expand uncertainty fan past 2 hours
+  if (tHr > 2.0) {
+    const spread = (tHr - 2.0) * 0.04;
+    stormObjects.C14.fan.setLatLngs([
+      [c14Lat, c14Lng],
+      [c14Lat + 0.08 + spread, c14Lng + 0.05],
+      [c14Lat + 0.04, c14Lng + 0.10 + spread]
+    ]);
+    stormObjects.C14.fan.setStyle({ opacity: 0.6, fillOpacity: 0.15 });
+  } else {
+    stormObjects.C14.fan.setStyle({ opacity: 0, fillOpacity: 0 });
+  }
+
+  // Move C-09 along NNW vector
+  const c09Lat = STORMS.C09.lat + (STORMS.C09.vecLat * tHr);
+  const c09Lng = STORMS.C09.lng + (STORMS.C09.vecLng * tHr);
+  mapMarkerIcons.C09.setLatLng([c09Lat, c09Lng]);
+  mapEtaLabels.C09.setLatLng([c09Lat + 0.02, c09Lng + 0.02]);
+  stormObjects.C09.reflCore.setLatLng([c09Lat, c09Lng]);
+  stormObjects.C09.reflOuter.setLatLng([c09Lat, c09Lng]);
+
+  // C-21 Grows in intensity from T+0 to T+3h
+  const c21Lat = STORMS.C21.lat + (STORMS.C21.vecLat * tHr);
+  const c21Lng = STORMS.C21.lng + (STORMS.C21.vecLng * tHr);
+  mapMarkerIcons.C21.setLatLng([c21Lat, c21Lng]);
+  mapEtaLabels.C21.setLatLng([c21Lat + 0.02, c21Lng + 0.02]);
+  stormObjects.C21.insatCooling.setLatLng([c21Lat, c21Lng]);
+  stormObjects.C21.insatCooling.setRadius(14000 + (tHr * 3000));
+}
+
+let isDraggingTimeline = false;
+
+function setTimelineFromEvent(e) {
+  const track = document.getElementById('timeline-track');
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  document.getElementById('timeline-cursor').style.left = `${pct * 100}%`;
+  const tHr = pct * 6.0;
+  updateStormPositionsByLeadTime(tHr);
+}
+
+function startTimelineDrag(e) {
+  isDraggingTimeline = true;
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+  if (isPlaying) togglePlay(); // Pause playback on manual drag
+  setTimelineFromEvent(e);
+}
+function moveTimelineDrag(e) {
+  if (isDraggingTimeline) setTimelineFromEvent(e);
+}
+function stopTimelineDrag(e) {
+  isDraggingTimeline = false;
+  try { if (e && e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+}
+function timelineKey(e) {
+  const k = e.key; let h = currentLeadTimeHr;
+  if (k === 'ArrowRight' || k === 'ArrowUp') h += 0.25;
+  else if (k === 'ArrowLeft' || k === 'ArrowDown') h -= 0.25;
+  else if (k === 'PageUp') h += 1; else if (k === 'PageDown') h -= 1;
+  else if (k === 'Home') h = 0; else if (k === 'End') h = 6; else return;
+  e.preventDefault();
+  stepLeadTime(Math.max(0, Math.min(6, h)) - currentLeadTimeHr);
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const btn = document.getElementById('play-btn');
+  if (isPlaying) {
+    btn.textContent = '⏸';
+    btn.style.background = '#f59e0b';
+    playInterval = setInterval(() => {
+      let nextHr = currentLeadTimeHr + 0.1;
+      if (nextHr > 6.0) nextHr = 0.0;
+      const pct = nextHr / 6.0;
+      document.getElementById('timeline-cursor').style.left = `${pct * 100}%`;
+      updateStormPositionsByLeadTime(nextHr);
+    }, 200);
+  } else {
+    btn.textContent = '▶';
+    btn.style.background = 'var(--accent-blue)';
+    clearInterval(playInterval);
+  }
+}
+
+function stepLeadTime(delta) {
+  if (isPlaying) togglePlay();
+  let nextHr = Math.max(0, Math.min(6.0, currentLeadTimeHr + delta));
+  const pct = nextHr / 6.0;
+  document.getElementById('timeline-cursor').style.left = `${pct * 100}%`;
+  updateStormPositionsByLeadTime(nextHr);
+}
+
+function resetLeadTime() {
+  if (isPlaying) togglePlay();
+  document.getElementById('timeline-cursor').style.left = '0%';
+  updateStormPositionsByLeadTime(0.0);
+}
+
+// ================================================================
+// SELECT & INSPECT STORM
+// ================================================================
+function selectStorm(key) {
+  activeStormKey = key;
+  const s = STORMS[key];
+
+  // Update Sidebar active state
+  ['C14', 'C09', 'C21'].forEach(k => {
+    const card = document.getElementById(`card-${k}`);
+    card.className = 'storm-summary-card';
+  });
+  const activeClass = key==='C14' ? 'active-red' : key==='C09' ? 'active-amber' : 'active-cyan';
+  document.getElementById(`card-${key}`).classList.add(activeClass);
+
+  // Update Hero Card
+  document.getElementById('hero-title').textContent = s.name;
+  document.getElementById('hero-subtitle').textContent = s.subtitle;
+  const badge = document.getElementById('hero-badge');
+  badge.textContent = s.severity;
+  badge.className = `hero-sev-badge ${s.badgeClass}`;
+
+  const countdownNumber = document.getElementById('hero-main-countdown');
+  countdownNumber.textContent = formatSeconds(countdownState[key]);
+  countdownNumber.style.color = s.color;
+  countdownNumber.textContent = formatSeconds(remaining(key));
+  countdownNumber.classList.toggle('window', remaining(key) > 7200);
+
+  document.getElementById('hero-movement').textContent = s.movement;
+  document.getElementById('hero-confidence').textContent = s.confidence;
+
+  // Update Parameter Meters
+  document.getElementById('hm-lightning-pct').textContent = `${s.lightning.pct}%`;
+  document.getElementById('hm-lightning-desc').textContent = s.lightning.desc;
+  document.getElementById('hm-lightning-bar').style.width = `${s.lightning.pct}%`;
+
+  document.getElementById('hm-hail-pct').textContent = `${s.hail.pct}%`;
+  document.getElementById('hm-hail-desc').textContent = s.hail.desc;
+  document.getElementById('hm-hail-bar').style.width = `${s.hail.pct}%`;
+
+  document.getElementById('hm-downburst-pct').textContent = `${s.downburst.pct}%`;
+  document.getElementById('hm-downburst-desc').textContent = s.downburst.desc;
+  document.getElementById('hm-downburst-bar').style.width = `${s.downburst.pct}%`;
+
+  document.getElementById('hm-cloudburst-pct').textContent = `${s.cloudburst.pct}%`;
+  document.getElementById('hm-cloudburst-desc').textContent = s.cloudburst.desc;
+  document.getElementById('hm-cloudburst-bar').style.width = `${s.cloudburst.pct}%`;
+
+  // Update Vulnerability & Impacts
+  document.getElementById('imp-villages').textContent = s.impact.villages;
+  document.getElementById('imp-pop').textContent = s.impact.pop;
+  document.getElementById('imp-hospital').textContent = s.impact.hospital;
+  document.getElementById('imp-hosp-name').textContent = s.impact.hospName;
+  document.getElementById('imp-crops').textContent = s.impact.crops;
+  document.getElementById('imp-crop-desc').textContent = s.impact.cropDesc;
+
+  // Update Sector ETAs
+  document.getElementById('eta-name-1').textContent = s.etas[0].name;
+  document.getElementById('eta-val-1').textContent = s.etas[0].val;
+  document.getElementById('eta-name-2').textContent = s.etas[1].name;
+  document.getElementById('eta-val-2').textContent = s.etas[1].val;
+  document.getElementById('eta-name-3').textContent = s.etas[2].name;
+  document.getElementById('eta-val-3').textContent = s.etas[2].val;
+
+  // Update Advisory
+  document.getElementById('adv-text-en').textContent = s.advisoryEn;
+  document.getElementById('adv-text-hi').textContent = s.advisoryHi;
+  document.getElementById('adv-telemetry').textContent = s.advisoryTel;
+
+  document.getElementById('dispatch-label').textContent = `PREPARE WARNING · ${s.id}`;
+  document.getElementById('dispatch-btn').style.background = s.color;
+  document.getElementById('dispatch-btn').style.color = key === 'C14' ? '#fff' : '#0b0f1a';
+  // Fly to where the storm is at the current lead time, then keep following it
+  followStorm = true; updateFollowUI();
+  const p = stormPosAt(key, currentLeadTimeHr);
+  flyingUntil = Date.now() + 900;
+  map.once('moveend', () => { flyingUntil = 0; followActiveStorm(currentLeadTimeHr, true); });
+  map.flyTo([p.lat, p.lng], 11, { duration: 0.8 });
+  refreshHazards(); renderIntel(key); refreshImpact();
+}
+
+// ================================================================
+// STORM-FOLLOW CAMERA (centres on the selected alert as the scrubber moves)
+// ================================================================
+function stormPosAt(key, tHr) {
+  const s = STORMS[key];
+  return { lat: s.lat + s.vecLat * tHr, lng: s.lng + s.vecLng * tHr };
+}
+function followActiveStorm(tHr, force) {
+  if (!followStorm || Date.now() < flyingUntil) return;
+  const p = stormPosAt(activeStormKey, tHr), prev = lastFollowT;
+  lastFollowT = tHr;
+  const smooth = isPlaying && tHr > prev && !force;
+  if (smooth) map.panTo([p.lat, p.lng], { animate: true, duration: 0.25, easeLinearity: 1, noMoveStart: true });
+  else map.setView([p.lat, p.lng], map.getZoom(), { animate: false });
+}
+function updateFollowUI() {
+  const b = document.getElementById('follow-btn');
+  if (!b) return;
+  b.textContent = followStorm ? `◎ Following ${STORMS[activeStormKey].id}` : '◌ Follow storm';
+  b.classList.toggle('on', followStorm);
+  b.setAttribute('aria-pressed', String(followStorm));
+}
+function toggleFollow() {
+  followStorm = !followStorm; updateFollowUI();
+  if (followStorm) followActiveStorm(currentLeadTimeHr, true);
+}
+map.on('dragstart', () => { if (followStorm) { followStorm = false; updateFollowUI(); } });
+
+function panToStorm(key) {
+  selectStorm(key);
+}
+
+// ================================================================
+// OPERATIONAL ROLES SWITCHER
+// ================================================================
+
+// ================================================================
+// LAYER CONTROLS
+// ================================================================
+const layerKeys = ['radar', 'velocity', 'insat', 'lightning', 'hail', 'cloudburst', 'rangeRings', 'grid', 'infrastructure', 'impact'];
+
+function setLayerState(index, enable) {
+  const row = document.querySelectorAll('.layer-row')[index];
+  const cb = row.querySelector('.layer-checkbox');
+  const group = layerGroups[layerKeys[index]];
+  row.setAttribute('aria-checked', String(!!enable));
+  if (enable) {
+    row.classList.add('active');
+    cb.classList.add('checked');
+    cb.textContent = '✓';
+    if (!map.hasLayer(group)) map.addLayer(group);
+  } else {
+    row.classList.remove('active');
+    cb.classList.remove('checked');
+    cb.textContent = '';
+    if (map.hasLayer(group)) map.removeLayer(group);
+  }
+}
+
+function toggleMapLayer(index, row) {
+  const cb = row.querySelector('.layer-checkbox');
+  const isChecked = cb.classList.contains('checked');
+  setLayerState(index, !isChecked);
+}
+
+function setAllLayersState(enable) {
+  layerKeys.forEach((_, idx) => setLayerState(idx, enable));
+}
+
+function toggleAllLayers() {
+  const firstChecked = document.querySelector('.layer-checkbox').classList.contains('checked');
+  setAllLayersState(!firstChecked);
+}
+
+// ================================================================
+// BILINGUAL & DISPATCH MODAL
+// ================================================================
+function toggleLanguage() {
+  hindiVisible = !hindiVisible;
+  const hiEl = document.getElementById('adv-text-hi');
+  const btn = document.getElementById('lang-btn');
+  if (hindiVisible) {
+    hiEl.style.display = 'block';
+    btn.classList.add('hindi-active');
+  } else {
+    hiEl.style.display = 'none';
+    btn.classList.remove('hindi-active');
+  }
+}
+
+function openDispatchModal() {
+  apprStep = 0; setApprUI();
+  const s = STORMS[activeStormKey];
+  const imp = lastImpact || computeImpact(activeStormKey, currentLeadTimeHr), at = stormPosAt(activeStormKey, currentLeadTimeHr);
+  document.getElementById('modal-cap-preview').textContent = `<?xml version="1.0" encoding="UTF-8"?>
+<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+  <identifier>MEGHRAKSHAK-2026-${s.id}-LIVE</identifier>
+  <sender>meghrakshak.demo@sdma.example</sender>
+  <sent>${new Date().toISOString()}</sent>
+  <status>Exercise</status>
+  <msgType>Alert</msgType>
+  <scope>Public</scope>
+  <info>
+    <category>Met</category>
+    <event>${s.name}</event>
+    <urgency>Immediate</urgency>
+    <severity>${s.severity}</severity>
+    <certainty>Likely</certainty>
+    <headline>Emergency Convective Warning: ${s.id}</headline>
+    <description>${s.advisoryEn}</description>
+    <instruction>${s.advisoryHi}</instruction>
+    <area>
+      <areaDesc>${imp.vill.length} settlements, ${imp.hosp.length} hospital(s), ~${imp.pop.toLocaleString('en-IN')} people (simulated) in projected path</areaDesc>
+      <circle>${at.lat.toFixed(3)},${at.lng.toFixed(3)},${IMPACT_DIM[activeStormKey].L}.0</circle>
+    </area>
+  </info>
+</alert>`;
+  document.getElementById('dispatch-modal').classList.add('active');
+  $('modal-confirm-btn').focus();
+}
+
+function closeModal() {
+  document.getElementById('dispatch-modal').classList.remove('active');
+}
+
+function confirmBroadcast() {
+  if (apprStep === 0) { apprStep = 1; setApprUI(); return; }
+  closeModal();
+  const id = 'AUD-' + Date.now().toString().slice(-6);
+  document.getElementById('toast').textContent = `✅ ${STORMS[activeStormKey].id} warning authorized & queued (SACHET / SMS / Cell Broadcast) · Audit ${id}`;
+  showToast();
+}
+
+function showToast() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+function resetMapView() {
+  followStorm = false; updateFollowUI();   // overview view: stop following until re-enabled
+  map.flyTo([28.70, 77.58], 10, { duration: 1 });
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+  }
+}
+
+// ================================================================
+// IMPACT CORRIDOR: projected path ahead of the selected storm.
+// Exposure tiles are computed from this corridor and the map's own
+// settlements, hospitals and NH-24, and update as the scrubber moves.
+// ================================================================
+const KMDEG = 111;
+const IMPACT_DIM = { C14: { W: 6, L: 22 }, C09: { W: 5, L: 16 }, C21: { W: 3.5, L: 12 } };  // half-width / length, km
+const NH24 = [[28.35,77.95],[28.55,77.78],[28.69,77.66],[28.74,77.68],[28.90,77.55],[29.05,77.45]];
+const POP_NAMED = { 'Rampur': 2400, 'Khajuri': 1800, 'Mahua': 1300, 'Sonpur': 3100 };      // simulated demo populations
+let impactFocus = null, lastImpact = null, _impRaf = 0;
+
+function scheduleImpact() {
+  if (!_impRaf) _impRaf = requestAnimationFrame(() => { _impRaf = 0; refreshImpact(); });
+}
+
+function corridorFor(key, t) {
+  const s = STORMS[key], d = IMPACT_DIM[key], c = stormPosAt(key, t);
+  const kl = KMDEG * Math.cos(c.lat * Math.PI / 180);
+  const dx = s.vecLng * kl, dy = s.vecLat * KMDEG, nrm = Math.hypot(dx, dy) || 1, ux = dx / nrm, uy = dy / nrm;
+  const unc = 1 + 0.25 * Math.max(0, t - 2), back = 3;          // corridor widens once the nowcast turns probabilistic
+  const halfW = sc => d.W * unc * (1 + 0.6 * Math.max(0, Math.min(sc, d.L)) / d.L);
+  const toLL = (sc, w) => [c.lat + (sc * uy + w * ux) / KMDEG, c.lng + (sc * ux - w * uy) / kl];
+  const test = (la, ln) => {
+    const x = (ln - c.lng) * kl, y = (la - c.lat) * KMDEG, sc = x * ux + y * uy, w = -x * uy + y * ux;
+    return sc >= -back && sc <= d.L && Math.abs(w) <= halfW(sc);
+  };
+  const left = [], right = [], N = 12;
+  for (let i = 0; i <= N; i++) { const sc = -back + (d.L + back) * i / N, w = halfW(sc); left.push(toLL(sc, w)); right.push(toLL(sc, -w)); }
+  let area = 0;
+  for (let i = 0; i < N; i++) { const s0 = -back + (d.L + back) * i / N, s1 = -back + (d.L + back) * (i + 1) / N; area += (halfW(s0) + halfW(s1)) * (s1 - s0); }
+  return { c, poly: left.concat(right.reverse()), test, area, tip: toLL(d.L, 0) };
+}
+
+function computeImpact(key, t) {
+  const cor = corridorFor(key, t), vill = [], hosp = [];
+  ASSETS.forEach(a => {
+    if (!cor.test(a.lat, a.lng)) return;
+    if (/Hospital|Clinic/i.test(a.type)) hosp.push({ name: a.name, la: a.lat, ln: a.lng });
+    else vill.push({ name: a.name, la: a.lat, ln: a.lng, pop: POP_NAMED[a.name] || 1000, named: true });
+  });
+  (window.demoHamlets || []).forEach(h => {
+    if (cor.test(h.la, h.ln)) vill.push({ name: h.n, la: h.la, ln: h.ln, pop: Math.round(h.r * h.r * 45) * 10 });
+  });
+  // NH-24: length of road inside the corridor, sampled every ~0.5 km
+  const samp = [], clat = Math.cos(28.7 * Math.PI / 180);
+  for (let i = 0; i < NH24.length - 1; i++) {
+    const a = NH24[i], b = NH24[i + 1], dkm = Math.hypot((b[0] - a[0]) * KMDEG, (b[1] - a[1]) * KMDEG * clat), n = Math.max(1, Math.ceil(dkm / 0.5));
+    for (let k = (i ? 1 : 0); k <= n; k++) { const f = k / n; samp.push({ la: a[0] + (b[0] - a[0]) * f, ln: a[1] + (b[1] - a[1]) * f, step: k === 0 ? 0 : dkm / n }); }
+  }
+  const runs = []; let cur = [], km = 0, prevIn = false;
+  samp.forEach(p => {
+    const inn = cor.test(p.la, p.ln);
+    if (inn) { if (prevIn) km += p.step; cur.push([p.la, p.ln]); } else if (cur.length) { runs.push(cur); cur = []; }
+    prevIn = inn;
+  });
+  if (cur.length) runs.push(cur);
+  let nearest = null;
+  ASSETS.forEach(a => {
+    if (!/Hospital|Clinic/i.test(a.type)) return;
+    const d = Math.hypot((a.lat - cor.c.lat) * KMDEG, (a.lng - cor.c.lng) * KMDEG * clat);
+    if (!nearest || d < nearest.km) nearest = { name: a.name, km: d };
+  });
+  return { cor, vill, hosp, runs, km, nearest,
+           pop: vill.reduce((q, v) => q + v.pop, 0),
+           cropHa: Math.round(cor.area * 100 * 0.5 / 50) * 50 };   // km² to ha, about half cropland
+}
+
+function refreshImpact() {
+  const key = activeStormKey, t = currentLeadTimeHr, s = STORMS[key], prob = t > 2;
+  const im = computeImpact(key, t), g = layerGroups.impact, f = impactFocus;
+  lastImpact = im;
+  g.clearLayers();
+  const dim = c => f && f !== c;
+  L.polygon(im.cor.poly, { interactive: false, color: s.color, weight: 1.6, dashArray: prob ? '6,6' : null, opacity: prob ? 0.7 : 0.95,
+    fillColor: s.color, fillOpacity: f === 'crops' ? 0.3 : (prob ? 0.07 : 0.12) }).addTo(g);
+  L.marker(im.cor.tip, { interactive: false, icon: L.divIcon({ className: '', iconAnchor: [0, 0],
+    html: `<div class="imp-tag" style="border-color:${s.color};color:${s.color}">${s.id} path · ${im.vill.length} settlements · ${im.hosp.length} hosp.${prob ? ' · possible' : ''}</div>` }) }).addTo(g);
+  im.runs.forEach(r => { if (r.length > 1) L.polyline(r, { interactive: false, color: '#fb7185', weight: f === 'road' ? 7 : 4, opacity: dim('road') ? 0.35 : 0.95, lineCap: 'round' }).addTo(g); });
+  im.vill.forEach(v => L.circleMarker([v.la, v.ln], { interactive: false, radius: (v.named ? 13 : 7) + (f === 'villages' ? 4 : 0), color: '#f472b6', weight: 2,
+    fillColor: '#f472b6', fillOpacity: f === 'villages' ? 0.22 : 0.08, className: 'imp-ring' + (dim('villages') ? ' dim' : '') }).addTo(g));
+  im.hosp.forEach(h => L.circleMarker([h.la, h.ln], { interactive: false, radius: 15 + (f === 'hospital' ? 4 : 0), color: '#fb7185', weight: 2.5,
+    fillColor: '#fb7185', fillOpacity: f === 'hospital' ? 0.25 : 0.1, className: 'imp-ring' + (dim('hospital') ? ' dim' : '') }).addTo(g));
+
+  const S = (id, tx) => { const e = document.getElementById(id); if (e) e.textContent = tx; };
+  const n = im.vill.length, nh = im.hosp.length;
+  S('imp-villages', `${n} ${n === 1 ? 'Village' : 'Villages'}`);
+  S('imp-pop', `~${im.pop.toLocaleString('en-IN')} civilians ${prob ? 'possibly ' : ''}exposed`);
+  S('imp-hospital', `${nh} ${nh === 1 ? 'Hospital' : 'Hospitals'}`);
+  S('imp-hosp-name', nh ? im.hosp.map(h => h.name).join(', ') : (im.nearest ? `None in path · nearest ${im.nearest.name}, ${im.nearest.km.toFixed(0)} km` : 'None in path'));
+  S('imp-crops', `${im.cropHa.toLocaleString('en-IN')} ha Crops`);
+  S('imp-crop-desc', `${s.impact.cropDesc} (est.)`);
+  S('imp-road', im.km > 0 ? `NH-24 · ${im.km.toFixed(1)} km` : 'No highway');
+  S('imp-road-desc', im.km > 0 ? 'inside projected path' : 'none in projected path');
+}
+
+function focusImpact(cat) {
+  impactFocus = impactFocus === cat ? null : cat;
+  document.querySelectorAll('.impact-tile').forEach(el => {
+    const on = el.dataset.cat === impactFocus;
+    el.classList.toggle('sel', on); el.setAttribute('aria-pressed', String(on));
+  });
+  if (impactFocus) {
+    if (!map.hasLayer(layerGroups.impact)) setLayerState(9, true);
+    refreshImpact();
+    flyingUntil = Date.now() + 700;            // let the framing finish before the follow camera re-centres
+    map.fitBounds(L.polygon(lastImpact.cor.poly).getBounds(), { padding: [70, 70], maxZoom: 12, animate: true, duration: 0.6 });
+  } else refreshImpact();
+}
+
+// Collapsible right-panel cards: hazards and impact open, the rest collapsed
+(function setupAccordions() {
+  const sel = ['hazard-metrics-card', 'impact-card', 'etas-card', 'mini-card', 'advisory-box'].map(c => '#right-scrollable > .' + c).join(',');
+  document.querySelectorAll(sel).forEach(card => {
+    const head = card.querySelector(':scope > .hm-title');
+    if (!head) return;
+    const body = document.createElement('div');
+    body.className = 'acc-body';
+    while (head.nextSibling) body.appendChild(head.nextSibling);
+    card.appendChild(body);
+    head.classList.add('acc-head'); head.setAttribute('role', 'button'); head.tabIndex = 0;
+    const set = open => { card.classList.toggle('collapsed', !open); head.setAttribute('aria-expanded', String(open)); };
+    set(card.classList.contains('hazard-metrics-card') || card.classList.contains('impact-card'));
+    head.addEventListener('click', () => set(card.classList.contains('collapsed')));
+    head.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); head.click(); } });
+  });
+})();
+
+// Initial Selection
+selectStorm('C14');
+
+// ===== ADMINISTRATION EXTENSIONS =====
+var apprStep = 0, radarGap = false;
+function $(id) { return document.getElementById(id); }
+function remaining(k) { return Math.max(0, countdownState[k] - Math.round(currentLeadTimeHr * 3600)); }
+function setApprUI() {
+  $('appr-steps').textContent = apprStep === 0 ? 'STEP 1 OF 2 · DRAFT REVIEW (Duty Officer)' : 'STEP 2 OF 2 · AUTHORIZATION (District Magistrate / SDMA)';
+  $('modal-confirm-btn').textContent = apprStep === 0 ? 'Submit for Approval' : 'Authorize & Broadcast';
+}
+function refreshHazards() {
+  const s = STORMS[activeStormKey], t = currentLeadTimeHr;
+  const f = t <= 2 ? 1 - 0.08 * t : 0.84 * Math.exp(-(t - 2) * 0.3);
+  ['lightning','hail','downburst','cloudburst'].forEach(k => {
+    const p = Math.round(s[k].pct * f);
+    const prob = t > 2, half = prob ? Math.round(6 + (t - 2) * 5) : 0;
+    const lo = Math.max(0, p - half), hi = Math.min(100, p + half);
+    $(`hm-${k}-pct`).textContent = prob ? `${p}% (${lo}\u2013${hi}%)` : p + '%';
+    $(`hm-${k}-bar`).style.width = p + '%';
+    const tr = $(`hm-${k}-bar`).parentNode;
+    let band = tr.querySelector('.hm-band');
+    if (!band) { band = document.createElement('div'); band.className = 'hm-band'; tr.appendChild(band); }
+    band.style.display = prob ? 'block' : 'none';
+    band.style.left = lo + '%'; band.style.width = Math.max(0, hi - lo) + '%';
+  });
+  const c = Math.max(0.2, parseFloat(s.confidence.match(/[\d.]+/)[0]) - 0.07 * t - (radarGap ? 0.25 : 0));
+  const el = $('hero-confidence');
+  el.textContent = `Confidence: ${c.toFixed(2)} (${c >= 0.7 ? 'High' : c >= 0.5 ? 'Moderate' : 'Low'})` + (radarGap ? ' · radar gap' : '');
+  el.style.color = c < 0.5 ? 'var(--accent-red)' : 'var(--accent-blue)';
+  $('hz-note').textContent = `T+${t.toFixed(1)} h · ${t <= 2 ? 'Confident nowcast' : 'Probabilistic outlook (wider uncertainty)'} · % = chance of hazard in cell`;
+}
+var DET = {
+  C14: { log: ['14:12 · Echo >45 dBZ, VIL rising', '14:20 · Velocity divergence 28 m/s', '14:27 · First strokes (Damini)'], fuse: [52, 22, 18, 8] },
+  C09: { log: ['13:58 · 55+ dBZ core, slow motion', '14:15 · Rain-rate est. 108 mm/hr', '14:24 · AWS gauge 41 mm/hr'], fuse: [48, 18, 10, 24] },
+  C21: { log: ['14:05 · INSAT cooling −12 K/15 min', '14:20 · IR–WV difference +3 K', '14:30 · No radar echo yet (Z<20)'], fuse: [12, 58, 12, 18] }
+};
+var RES = {
+  C14: ['Shelter: Govt. School, Rampur (400)', 'Rescue: SDRF team, 12 min away', 'Medical: 2 ambulances staged at District Hospital'],
+  C09: ['Shelter: Community Hall, Khajuri (250)', 'Rescue: Boat/flood team, 25 min away', 'Road: close causeway on Khajuri–Belapur road'],
+  C21: ['Status: watch only, no evacuation', 'Action: alert block officers, Sonpur', 'Re-assess at next INSAT frame (≈15 min)']
+};
+function renderIntel(k) {
+  if (!DET || !RES) return;
+  $('intel-log').innerHTML = DET[k].log.map(x => `<div class="log-row">${x}</div>`).join('');
+  let [r, i, l, n] = DET[k].fuse;
+  if (radarGap) { i += Math.round(r * 0.6); l += Math.round(r * 0.3); n += r - Math.round(r * 0.6) - Math.round(r * 0.3); r = 0; }
+  const nm = ['Radar', 'INSAT', 'Lightning', 'NWP'], col = ['#ef4444', '#06b6d4', '#f59e0b', '#a855f7'];
+  $('fusion-bars').innerHTML = [r, i, l, n].map((v, j) => `<div class="fus-row"><span>${nm[j]}</span><div class="fus-track"><div style="width:${v}%;background:${col[j]}"></div></div><span>${v}%</span></div>`).join('');
+  $('res-list').innerHTML = RES[k].map(x => `<div class="log-row">${x}</div>`).join('');
+}
+function toggleRadarGap() {
+  radarGap = !radarGap;
+  $('pill-dwr').textContent = radarGap ? '1/3 · NE radar gap → satellite + lightning' : '3/3 Live (5 min)';
+  $('gap-btn').textContent = radarGap ? 'Restore radar feed' : 'Simulate radar outage';
+  refreshHazards(); renderIntel(activeStormKey);
+  $('toast').textContent = radarGap ? '⚠ Radar gap: degraded mode, low-confidence flag raised.' : 'Radar feed restored.'; showToast();
+}
+map.on('click', e => {
+  let m = '<b>Point ETA</b> <span style="opacity:.7">(straight-line, current speed)</span><br>';
+  Object.keys(STORMS).forEach(k => {
+    const s = STORMS[k], d = map.distance(e.latlng, [s.lat, s.lng]) / 1000, v = parseFloat(s.movement.match(/(\d+) km/)[1]);
+    const mins = Math.max(1, Math.round(d / v * 60));
+    m += `${s.id}: ${mins} min ± ${Math.round(3 + mins * 0.15)} (${d.toFixed(1)} km)<br>`;
+  });
+  L.popup().setLatLng(e.latlng).setContent(m).openOn(map);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+refreshHazards(); renderIntel('C14');
+</script>
+</body>
+</html>
